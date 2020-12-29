@@ -25,6 +25,7 @@ import java.util.TimeZone;
 
 public class GeofenceBroadcastReceiver extends BroadcastReceiver {
 
+
    String StartTime="";
    String EndTime="16:00 PM";
 
@@ -49,6 +50,7 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
 
         switch (transitionType){
             case Geofence.GEOFENCE_TRANSITION_ENTER:
+                MainActivity.hasExit=false;
                 Toast.makeText(context,"Entering on selected zone",Toast.LENGTH_SHORT).show();
                 Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("GMT+5:00"));
                 Date currentLocalTime = cal.getTime();
@@ -76,7 +78,11 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
                 DateFormat date2 = new SimpleDateFormat("HH:mm a");
 // you can get seconds by adding  "...:ss" to it
                 date2.setTimeZone(TimeZone.getTimeZone("GMT+5:00"));
-
+                int hours2=getHours(StartTime,EndTime);
+                int min2=getMinutes(StartTime,EndTime);
+                MainActivity.MainHours=hours2;
+                MainActivity.MainMinutes=min2;
+                MainActivity.hasExit=true;
                 String localTimeLater = date2.format(currentLocalTime2);
                 notificationHelper.sendHighPriorityNotification("Exit","Exit from the selected zone at "+localTimeLater, MapsActivity.class);
                 break;

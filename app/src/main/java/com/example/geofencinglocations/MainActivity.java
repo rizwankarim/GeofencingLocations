@@ -28,6 +28,9 @@ public class MainActivity extends AppCompatActivity {
     private GeofenceHelper geofenceHelper;
     private String GEOFENCE_ID = "SOME_GEOFENCE_ID";
     private SimpleLocation location;
+    public static int MainHours=0;
+    public static int MainMinutes=0;
+    public static boolean hasExit=false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,7 +57,22 @@ public class MainActivity extends AppCompatActivity {
                 Toast.makeText(MainActivity.this, "Success", Toast.LENGTH_SHORT).show();
             }
         });
+        if(hasExit==true)
+        {
+            Toast.makeText(MainActivity.this, "Has Exited...", Toast.LENGTH_SHORT).show();
+            geofencingClient = LocationServices.getGeofencingClient(this);
+            geofenceHelper = new GeofenceHelper(this);
+            final double latitude2 = location.getLatitude();
+            final double longitude2 = location.getLongitude();
+            LatLng myLatlng2= new LatLng(latitude,longitude);
+            addGeofence(myLatlng2,200);
+        }
+        else
+            {
+                Toast.makeText(MainActivity.this, "Else Part...", Toast.LENGTH_SHORT).show();
+            }
     }
+
 
     private void addGeofence(LatLng latLng, float radius) {
         Geofence geofence = geofenceHelper.getGeofence(GEOFENCE_ID, latLng, radius, Geofence.GEOFENCE_TRANSITION_ENTER
