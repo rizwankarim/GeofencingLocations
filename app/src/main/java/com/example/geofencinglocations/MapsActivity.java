@@ -4,8 +4,11 @@ import android.Manifest;
 import android.app.PendingIntent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.location.Address;
+import android.location.Geocoder;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Looper;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -17,6 +20,9 @@ import androidx.fragment.app.FragmentActivity;
 import com.google.android.gms.location.Geofence;
 import com.google.android.gms.location.GeofencingClient;
 import com.google.android.gms.location.GeofencingRequest;
+import com.google.android.gms.location.LocationCallback;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -28,6 +34,13 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
+
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, GoogleMap.OnMapLongClickListener {
 
     //for tutorial: https://www.youtube.com/watch?v=nmAtMqljH9M
@@ -35,7 +48,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private GoogleMap mMap;
     private GeofencingClient geofencingClient;
     private GeofenceHelper geofenceHelper;
-
+    public LatLng myLatlng;
+    public String myCurrentAddress;
+    public String address;
     private String GEOFENCE_ID = "SOME_GEOFENCE_ID";
 
     @Override
@@ -63,13 +78,14 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
+        getCurrentLocation();
+    }
 
-        // Add a marker in Sydney and move the camera
-        LatLng karachi = new LatLng(24.8646812, 67.0735411);
-        addCircle(karachi,200);
-        addGeofence(karachi,200);
-        mMap.addMarker(new MarkerOptions().position(karachi).title("Marker in Karachi"));
-        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(karachi,16));
+    public void onMapStart(LatLng latLng){
+        addCircle(latLng,200);
+        addGeofence(latLng,200);
+        mMap.addMarker(new MarkerOptions().position(latLng).title("You"));
+        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng,16));
         enableUserLocation();
         mMap.setOnMapLongClickListener(this);
     }
@@ -111,8 +127,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     @Override
     public void onMapLongClick(LatLng latLng) {
-
-
         if(Build.VERSION.SDK_INT>=29){
             if (ContextCompat.checkSelfPermission(this,Manifest.permission.ACCESS_BACKGROUND_LOCATION)==
             PackageManager.PERMISSION_GRANTED){
@@ -138,6 +152,68 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         addMarker(latLng);
         addCircle(latLng, 200);
         addGeofence(latLng,200);
+    }
+
+    private void getCurrentLocation() {
+        LocationRequest locationRequest = new LocationRequest();
+        locationRequest.setInterval(10000);
+        locationRequest.setFastestInterval(5000);
+        locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+        if (ActivityCompat.checkSelfPermission(this.getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this.getApplicationContext(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            return;
+        }
+        LocationServices.getFusedLocationProviderClient(MapsActivity.this)
+                .requestLocationUpdates(locationRequest, new LocationCallback() {
+                    @Override
+                    public void onLocationResult(LocationResult locationResult) {
+                        super.onLocationResult(locationResult);
+                        LocationServices.getFusedLocationProviderClient(MapsActivity.this)
+                                .removeLocationUpdates(this);
+                        if (locationResult != null && locationResult.getLocations().size() > 0) {
+                            int locationindex = locationResult.getLocations().size() - 1;
+                            double current_lat=locationResult.getLocations().get(locationindex).getLatitude();
+                            double current_long=locationResult.getLocations().get(locationindex).getLongitude();
+                            LatLng myLatlng= new LatLng(current_lat,current_long);
+                            //double current_lat = 24.863473;
+                            //double current_long = 67.072290;
+                            Log.d("Location", String.valueOf(current_lat) + "," + String.valueOf(current_long));
+                            onMapStart(myLatlng);
+                            myCurrentAddress=getAddress(myLatlng);
+                            Toast.makeText(MapsActivity.this,myCurrentAddress,Toast.LENGTH_SHORT).show();
+                            //details= getGeocodingDetails(current_lat,current_long);
+                            //Log.d("Location", details.getPlaceLatitude()+","+details.getPlaceLongitude());
+                        }
+                    }
+                }, Looper.getMainLooper());
+    }
+
+    public String getAddress(LatLng latLng){
+        Geocoder geocoder;
+        List<Address> addresses = new ArrayList<>();
+        geocoder = new Geocoder(this, Locale.getDefault());
+
+        try {
+            Toast.makeText(this, "loc getting", Toast.LENGTH_SHORT).show();
+            addresses = geocoder.getFromLocation(latLng.latitude,latLng.longitude, 1);
+            address = addresses.get(0).getAddressLine(0); // If any additional address line present than only, check with max available address lines by getMaxAddressLineIndex()
+            String city = addresses.get(0).getLocality();
+            String state = addresses.get(0).getAdminArea();
+            String country = addresses.get(0).getCountryName();
+            String postalCode = addresses.get(0).getPostalCode();
+            String knownName = addresses.get(0).getFeatureName();
+
+            SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+            Date date = new Date();
+            String time = formatter.format(date).toString();
+
+            //completeDetails = new place("GuzFS0EjtBSwuRXBuRfhFN8ZSfm1", latitude, longitude, address, "pending", time);
+            //Log.d("LOCATION_DETAILS", completeDetails.toString());
+            Toast.makeText(this, "Got loc", Toast.LENGTH_SHORT).show();
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return address ;
     }
 
     private void addGeofence(LatLng latLng, float radius) {
