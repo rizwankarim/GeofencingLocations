@@ -21,19 +21,32 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 
+import im.delight.android.location.SimpleLocation;
+
 public class MainActivity extends AppCompatActivity {
     private GeofencingClient geofencingClient;
     private GeofenceHelper geofenceHelper;
     private String GEOFENCE_ID = "SOME_GEOFENCE_ID";
+    private SimpleLocation location;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         Button on= findViewById(R.id.on);
+        // construct a new instance of SimpleLocation
+        location = new SimpleLocation(this);
+
+        // if we can't access the location yet
+        if (!location.hasLocationEnabled()) {
+            // ask the user to enable location access
+            SimpleLocation.openSettings(this);
+        }
         geofencingClient = LocationServices.getGeofencingClient(this);
         geofenceHelper = new GeofenceHelper(this);
-        LatLng myLatlng= new LatLng(24.8638,67.0736);
+        final double latitude = location.getLatitude();
+        final double longitude = location.getLongitude();
+        LatLng myLatlng= new LatLng(latitude,longitude);
         on.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -67,5 +80,17 @@ public class MainActivity extends AppCompatActivity {
                         Log.d("MainActivity","onFailure:" + errorMessage);
                     }
                 });
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        location.beginUpdates();
+    }
+
+    @Override
+    protected void onPause() {
+        location.endUpdates();
+        super.onPause();
     }
 }
