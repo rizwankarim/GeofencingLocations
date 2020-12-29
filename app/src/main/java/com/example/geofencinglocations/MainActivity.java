@@ -24,9 +24,9 @@ import com.google.android.gms.tasks.OnSuccessListener;
 import im.delight.android.location.SimpleLocation;
 
 public class MainActivity extends AppCompatActivity {
-    private GeofencingClient geofencingClient;
-    private GeofenceHelper geofenceHelper;
-    private String GEOFENCE_ID = "SOME_GEOFENCE_ID";
+    public  GeofencingClient geofencingClient;
+    public  GeofenceHelper geofenceHelper;
+    public  String GEOFENCE_ID = "SOME_GEOFENCE_ID";
     private SimpleLocation location;
     public static int MainHours=0;
     public static int MainMinutes=0;

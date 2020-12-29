@@ -1,16 +1,27 @@
 package com.example.geofencinglocations;
 
+import android.Manifest;
+import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.Build;
 import android.util.Log;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
+import androidx.core.app.ActivityCompat;
 
 import com.google.android.gms.location.Geofence;
+import com.google.android.gms.location.GeofencingClient;
 import com.google.android.gms.location.GeofencingEvent;
+import com.google.android.gms.location.GeofencingRequest;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 
 import java.sql.Struct;
 import java.text.DateFormat;
@@ -23,11 +34,16 @@ import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
 
+import im.delight.android.location.SimpleLocation;
+
 public class GeofenceBroadcastReceiver extends BroadcastReceiver {
 
-
    String StartTime="";
-   String EndTime="16:00 PM";
+   String EndTime="";
+   public GeofencingClient geofencingClient;
+   public  GeofenceHelper geofenceHelper;
+   private SimpleLocation location;
+   public  String GEOFENCE_ID = "SOME_GEOFENCE_ID";
 
     @Override
     public void onReceive(Context context, Intent intent) {
@@ -35,6 +51,15 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
         // an Intent broadcast.
         //Toast.makeText(context,"Geofence triggered...",Toast.LENGTH_SHORT).show();
 
+        geofencingClient = LocationServices.getGeofencingClient(context);
+        geofenceHelper = new GeofenceHelper(context);
+        location = new SimpleLocation(context);
+
+        // if we can't access the location yet
+        if (!location.hasLocationEnabled()) {
+            // ask the user to enable location access
+            SimpleLocation.openSettings(context);
+        }
         NotificationHelper notificationHelper= new NotificationHelper(context);
 
         GeofencingEvent geofencingEvent = GeofencingEvent.fromIntent(intent);
@@ -50,7 +75,6 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
 
         switch (transitionType){
             case Geofence.GEOFENCE_TRANSITION_ENTER:
-                MainActivity.hasExit=false;
                 Toast.makeText(context,"Entering on selected zone",Toast.LENGTH_SHORT).show();
                 Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("GMT+5:00"));
                 Date currentLocalTime = cal.getTime();
@@ -61,30 +85,42 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
                 String localTimeNow = date.format(currentLocalTime);
                 StartTime=localTimeNow;
                 notificationHelper.sendHighPriorityNotification("Entry","Entering on selected zone at "+localTimeNow, MapsActivity.class);
-                int hours=getHours(StartTime,EndTime);
-                int min=getMinutes(StartTime,EndTime);
-                String time=Integer.toString(hours)+":"+Integer.toString(min);
-                notificationHelper.sendHighPriorityNotification("Notify : ","Time Is "+time, MapsActivity.class);
 
+                //String time=Integer.toString(hours)+":"+Integer.toString(min);
+                //notificationHelper.sendHighPriorityNotification("Notify : ","Time Is "+time, MapsActivity.class);
                 break;
+
             case Geofence.GEOFENCE_TRANSITION_DWELL:
                 Toast.makeText(context,"In the selected zone",Toast.LENGTH_SHORT).show();
                 notificationHelper.sendHighPriorityNotification("Dwell","In the selected zone", MapsActivity.class);
                 break;
+
             case Geofence.GEOFENCE_TRANSITION_EXIT:
                 Toast.makeText(context,"Exit from the selected zone",Toast.LENGTH_SHORT).show();
                 Calendar cal2 = Calendar.getInstance(TimeZone.getTimeZone("GMT+5:00"));
                 Date currentLocalTime2 = cal2.getTime();
                 DateFormat date2 = new SimpleDateFormat("HH:mm a");
-// you can get seconds by adding  "...:ss" to it
+                // you can get seconds by adding  "...:ss" to it
                 date2.setTimeZone(TimeZone.getTimeZone("GMT+5:00"));
-                int hours2=getHours(StartTime,EndTime);
-                int min2=getMinutes(StartTime,EndTime);
-                MainActivity.MainHours=hours2;
-                MainActivity.MainMinutes=min2;
-                MainActivity.hasExit=true;
                 String localTimeLater = date2.format(currentLocalTime2);
+                EndTime= localTimeLater;
                 notificationHelper.sendHighPriorityNotification("Exit","Exit from the selected zone at "+localTimeLater, MapsActivity.class);
+                int hours=getHours(StartTime,EndTime);
+                int min=getMinutes(StartTime,EndTime);
+                if(min < 15){
+                    Toast.makeText(context, "No nearby", Toast.LENGTH_SHORT).show();
+                    final double latitude = location.getLatitude();
+                    final double longitude = location.getLongitude();
+                    LatLng myLatlng= new LatLng(latitude,longitude);
+                    addGeofence(context,myLatlng,200);
+                }
+                else{
+                    Toast.makeText(context, "Nearby success", Toast.LENGTH_SHORT).show();
+                    final double latitude = location.getLatitude();
+                    final double longitude = location.getLongitude();
+                    LatLng myLatlng= new LatLng(latitude,longitude);
+                    addGeofence(context,myLatlng,200);
+                }
                 break;
         }
 
@@ -123,6 +159,32 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
             e.printStackTrace();
         }
         return min;
+    }
+
+    private void addGeofence(Context context,LatLng latLng, float radius) {
+        Geofence geofence = geofenceHelper.getGeofence(GEOFENCE_ID, latLng, radius, Geofence.GEOFENCE_TRANSITION_ENTER
+                | Geofence.GEOFENCE_TRANSITION_DWELL | Geofence.GEOFENCE_TRANSITION_EXIT);
+        GeofencingRequest geofenceRequest = geofenceHelper.getGeofenceRequest(geofence);
+        PendingIntent pendingIntent = geofenceHelper.getPendingIntent();
+
+        if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+
+            return;
+        }
+        geofencingClient.addGeofences(geofenceRequest, pendingIntent).
+                addOnSuccessListener(new OnSuccessListener<Void>() {
+                    @Override
+                    public void onSuccess(Void aVoid) {
+                        Log.d("MainActivity","onSuccess..");
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        String errorMessage= geofenceHelper.getErrorCode(e);
+                        Log.d("MainActivity","onFailure:" + errorMessage);
+                    }
+                });
     }
 
 }
