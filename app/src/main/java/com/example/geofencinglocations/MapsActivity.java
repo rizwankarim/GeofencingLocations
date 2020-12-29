@@ -30,7 +30,6 @@ import com.google.android.gms.tasks.OnSuccessListener;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, GoogleMap.OnMapLongClickListener {
 
-    //for tutorial: https://www.youtube.com/watch?v=nmAtMqljH9M
 
     private GoogleMap mMap;
     private GeofencingClient geofencingClient;
