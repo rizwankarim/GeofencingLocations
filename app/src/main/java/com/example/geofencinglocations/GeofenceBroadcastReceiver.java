@@ -123,7 +123,7 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
                 }
                 break;
         }
-
+//Conment
     }
     public int getHours(String d1,String d2)
     {
