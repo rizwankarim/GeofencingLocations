@@ -7,6 +7,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
+import android.os.Looper;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -18,6 +19,9 @@ import com.google.android.gms.location.Geofence;
 import com.google.android.gms.location.GeofencingClient;
 import com.google.android.gms.location.GeofencingEvent;
 import com.google.android.gms.location.GeofencingRequest;
+import com.google.android.gms.location.LocationCallback;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.tasks.OnFailureListener;
@@ -69,9 +73,7 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
                 Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("GMT+5:00"));
                 Date currentLocalTime = cal.getTime();
                 DateFormat date = new SimpleDateFormat("HH:mm a");
-// you can get seconds by adding  "...:ss" to it
                 date.setTimeZone(TimeZone.getTimeZone("GMT+5:00"));
-
                 String localTimeNow = date.format(currentLocalTime);
                 StartTime=localTimeNow;
                 notificationHelper.sendHighPriorityNotification("Entry","Entering on selected zone at "+localTimeNow, MapsActivity.class);
@@ -97,12 +99,12 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
                 notificationHelper.sendHighPriorityNotification("Exit","Exit from the selected zone at "+localTimeLater, MapsActivity.class);
                 int hours=getHours(StartTime,EndTime);
                 int min=getMinutes(StartTime,EndTime);
-                //24.863836 67.073000
-                double lat=24.863836;
-                double lon=67.071000;
-                LatLng myLatlng= new LatLng(lat,lon);
-                Log.d("Receiver",myLatlng.toString());
-                addGeofence(context,myLatlng,50);
+                getCurrentLocation(context);
+//                double lat=24.863836;
+//                double lon=67.071000;
+                //LatLng myLatlng= new LatLng(lat,lon);
+                //Log.d("Receiver",myLatlng.toString());
+
                /* if(min < 15){
                     Toast.makeText(context, "No nearby", Toast.LENGTH_SHORT).show();
                     final double latitude = location.getLatitude();
@@ -124,7 +126,6 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
                 */
                 break;
         }
-//Conment
     }
     public int getHours(String d1,String d2)
     {
@@ -186,6 +187,33 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
                         Log.d("MainActivity","onFailure:" + errorMessage);
                     }
                 });
+    }
+
+    private void getCurrentLocation(Context context) {
+        LocationRequest locationRequest = new LocationRequest();
+        locationRequest.setInterval(10000);
+        locationRequest.setFastestInterval(5000);
+        locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+        if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            return;
+        }
+        LocationServices.getFusedLocationProviderClient(context)
+                .requestLocationUpdates(locationRequest, new LocationCallback() {
+                    @Override
+                    public void onLocationResult(LocationResult locationResult) {
+                        super.onLocationResult(locationResult);
+                        LocationServices.getFusedLocationProviderClient(context)
+                                .removeLocationUpdates(this);
+                        if (locationResult != null && locationResult.getLocations().size() > 0) {
+                            int locationindex = locationResult.getLocations().size() - 1;
+                            double current_lat=locationResult.getLocations().get(locationindex).getLatitude();
+                            double current_long=locationResult.getLocations().get(locationindex).getLongitude();
+                            LatLng myLatlng= new LatLng(current_lat,current_long);
+                            Log.d("Location", String.valueOf(current_lat) + "," + String.valueOf(current_long));
+                            addGeofence(context,myLatlng,50);
+                        }
+                    }
+                }, Looper.getMainLooper());
     }
 
 }
