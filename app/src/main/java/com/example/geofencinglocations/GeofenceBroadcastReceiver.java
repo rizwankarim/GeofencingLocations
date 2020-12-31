@@ -28,6 +28,7 @@ import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 
 
+
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -35,15 +36,17 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
+import java.util.concurrent.TimeUnit;
 
 
 public class GeofenceBroadcastReceiver extends BroadcastReceiver {
 
-   String StartTime="";
+   public static String StartTime="";
    String EndTime="";
    public GeofencingClient geofencingClient;
    public  GeofenceHelper geofenceHelper;
    public  String GEOFENCE_ID = "SOME_GEOFENCE_ID";
+   int min;
 
     @Override
     public void onReceive(Context context, Intent intent) {
@@ -72,11 +75,11 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
                 Toast.makeText(context,"Entering on selected zone",Toast.LENGTH_SHORT).show();
                 Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("GMT+5:00"));
                 Date currentLocalTime = cal.getTime();
-                DateFormat date = new SimpleDateFormat("HH:mm a");
+                DateFormat date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
                 date.setTimeZone(TimeZone.getTimeZone("GMT+5:00"));
                 String localTimeNow = date.format(currentLocalTime);
                 StartTime=localTimeNow;
-                notificationHelper.sendHighPriorityNotification("Entry","Entering on selected zone at "+localTimeNow, MapsActivity.class);
+                notificationHelper.sendHighPriorityNotification("Entry","Entering on selected zone at "+StartTime, MapsActivity.class);
 
                 //String time=Integer.toString(hours)+":"+Integer.toString(min);
                 //notificationHelper.sendHighPriorityNotification("Notify : ","Time Is "+time, MapsActivity.class);
@@ -91,14 +94,15 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
                 Toast.makeText(context,"Exit from the selected zone",Toast.LENGTH_SHORT).show();
                 Calendar cal2 = Calendar.getInstance(TimeZone.getTimeZone("GMT+5:00"));
                 Date currentLocalTime2 = cal2.getTime();
-                DateFormat date2 = new SimpleDateFormat("HH:mm a");
-                // you can get seconds by adding  "...:ss" to it
+                DateFormat date2 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
                 date2.setTimeZone(TimeZone.getTimeZone("GMT+5:00"));
                 String localTimeLater = date2.format(currentLocalTime2);
                 EndTime= localTimeLater;
                 notificationHelper.sendHighPriorityNotification("Exit","Exit from the selected zone at "+localTimeLater, MapsActivity.class);
                 int hours=getHours(StartTime,EndTime);
-                int min=getMinutes(StartTime,EndTime);
+
+                Toast.makeText(context, StartTime, Toast.LENGTH_SHORT).show();
+                min= getMinutes(context,StartTime,EndTime);
                 //getCurrentLocation(context);
                 checkCondition(context,min);
                 break;
@@ -107,7 +111,7 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
     public int getHours(String d1,String d2)
     {
         int hours=0;
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("hh:mm a");
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         try {
             Date date1  = simpleDateFormat.parse(d1);
             Date date2 = simpleDateFormat.parse(d2);
@@ -122,22 +126,25 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
         return hours;
     }
 
-    public int getMinutes(String d1,String d2)
+    public int getMinutes(Context context,String d1,String d2)
     {
-        int min=0;
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("hh:mm a");
+        int myMin=0;
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        simpleDateFormat.setTimeZone(TimeZone.getTimeZone("GMT+5:00"));
         try {
             Date date1  = simpleDateFormat.parse(d1);
             Date date2 = simpleDateFormat.parse(d2);
             long difference = date2.getTime() - date1.getTime();
             int days = (int) (difference / (1000*60*60*24));
             int hours= (int) ((difference - (1000*60*60*24*days)) / (1000*60*60));
-            min = (int) (difference - (1000*60*60*24*days) - (1000*60*60*hours)) / (1000*60);
+            int min = (int) (difference - (1000*60*60*24*days) - (1000*60*60*hours)) / (1000*60);
             hours = (hours < 0 ? -hours : hours);
+            myMin=min;
         } catch (ParseException e) {
             e.printStackTrace();
+            Log.d("Error ",e.getMessage());
         }
-        return min;
+        return myMin;
     }
 
     private void addGeofence(Context context,LatLng latLng, float radius) {
@@ -195,8 +202,9 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
                 }, Looper.getMainLooper());
     }
 
-    public void checkCondition(Context context,int min){
-          if(min < 15){
+    public void checkCondition(Context context,int myMin){
+        Toast.makeText(context, "Min : "+Integer.toString(myMin), Toast.LENGTH_SHORT).show();
+          if(myMin < 1){
                     Toast.makeText(context, "No nearby...", Toast.LENGTH_SHORT).show();
                     getCurrentLocation(context);
                     //addGeofence(context,myLatlng,200);
