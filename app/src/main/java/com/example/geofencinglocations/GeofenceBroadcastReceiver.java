@@ -99,31 +99,8 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
                 notificationHelper.sendHighPriorityNotification("Exit","Exit from the selected zone at "+localTimeLater, MapsActivity.class);
                 int hours=getHours(StartTime,EndTime);
                 int min=getMinutes(StartTime,EndTime);
-                getCurrentLocation(context);
-//                double lat=24.863836;
-//                double lon=67.071000;
-                //LatLng myLatlng= new LatLng(lat,lon);
-                //Log.d("Receiver",myLatlng.toString());
-
-               /* if(min < 15){
-                    Toast.makeText(context, "No nearby", Toast.LENGTH_SHORT).show();
-                    final double latitude = location.getLatitude();
-                    final double longitude = location.getLongitude();
-                    LatLng myLatlng= new LatLng(latitude,longitude);
-                    addGeofence(context,myLatlng,200);
-                }
-                else{
-                     //24.863836 67.073000
-              //  final double latitude = location.getLatitude();
-              //  final double longitude = location.getLongitude();
-                double lat=24.863836;
-                double lon=67.071000;
-                LatLng myLatlng= new LatLng(lat,lon);
-                Log.d("Receiver",myLatlng.toString());
-                addGeofence(context,myLatlng,50);
-                }
-
-                */
+                //getCurrentLocation(context);
+                checkCondition(context,min);
                 break;
         }
     }
@@ -210,10 +187,27 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
                             double current_long=locationResult.getLocations().get(locationindex).getLongitude();
                             LatLng myLatlng= new LatLng(current_lat,current_long);
                             Log.d("Location", String.valueOf(current_lat) + "," + String.valueOf(current_long));
-                            addGeofence(context,myLatlng,50);
+                            addGeofence(context,myLatlng,100);
+                            MapsActivity.mMap.clear();
+                            MapsActivity.addCircle(myLatlng,100);
                         }
                     }
                 }, Looper.getMainLooper());
+    }
+
+    public void checkCondition(Context context,int min){
+          if(min < 15){
+                    Toast.makeText(context, "No nearby...", Toast.LENGTH_SHORT).show();
+                    getCurrentLocation(context);
+                    //addGeofence(context,myLatlng,200);
+                }
+                else{
+                    Toast.makeText(context, "Nearby Success...", Toast.LENGTH_SHORT).show();
+                    getCurrentLocation(context);
+                    //addGeofence(context,myLatlng,50);
+                }
+
+
     }
 
 }
