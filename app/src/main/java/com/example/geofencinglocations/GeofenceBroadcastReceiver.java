@@ -23,18 +23,15 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 
-import java.sql.Struct;
+
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
 
-import im.delight.android.location.SimpleLocation;
 
 public class GeofenceBroadcastReceiver extends BroadcastReceiver {
 
@@ -42,7 +39,6 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
    String EndTime="";
    public GeofencingClient geofencingClient;
    public  GeofenceHelper geofenceHelper;
-   private SimpleLocation location;
    public  String GEOFENCE_ID = "SOME_GEOFENCE_ID";
 
     @Override
@@ -53,13 +49,7 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
 
         geofencingClient = LocationServices.getGeofencingClient(context);
         geofenceHelper = new GeofenceHelper(context);
-        location = new SimpleLocation(context);
 
-        // if we can't access the location yet
-        if (!location.hasLocationEnabled()) {
-            // ask the user to enable location access
-            SimpleLocation.openSettings(context);
-        }
         NotificationHelper notificationHelper= new NotificationHelper(context);
 
         GeofencingEvent geofencingEvent = GeofencingEvent.fromIntent(intent);
@@ -107,7 +97,13 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
                 notificationHelper.sendHighPriorityNotification("Exit","Exit from the selected zone at "+localTimeLater, MapsActivity.class);
                 int hours=getHours(StartTime,EndTime);
                 int min=getMinutes(StartTime,EndTime);
-                if(min < 15){
+                //24.863836 67.073000
+                double lat=24.863836;
+                double lon=67.071000;
+                LatLng myLatlng= new LatLng(lat,lon);
+                Log.d("Receiver",myLatlng.toString());
+                addGeofence(context,myLatlng,50);
+               /* if(min < 15){
                     Toast.makeText(context, "No nearby", Toast.LENGTH_SHORT).show();
                     final double latitude = location.getLatitude();
                     final double longitude = location.getLongitude();
@@ -115,12 +111,17 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
                     addGeofence(context,myLatlng,200);
                 }
                 else{
-                    Toast.makeText(context, "Nearby success", Toast.LENGTH_SHORT).show();
-                    final double latitude = location.getLatitude();
-                    final double longitude = location.getLongitude();
-                    LatLng myLatlng= new LatLng(latitude,longitude);
-                    addGeofence(context,myLatlng,200);
+                     //24.863836 67.073000
+              //  final double latitude = location.getLatitude();
+              //  final double longitude = location.getLongitude();
+                double lat=24.863836;
+                double lon=67.071000;
+                LatLng myLatlng= new LatLng(lat,lon);
+                Log.d("Receiver",myLatlng.toString());
+                addGeofence(context,myLatlng,50);
                 }
+
+                */
                 break;
         }
 //Conment

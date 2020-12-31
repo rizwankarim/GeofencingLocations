@@ -81,8 +81,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     public void onMapStart(LatLng latLng){
-        addCircle(latLng,200);
-        addGeofence(latLng,200);
+        addCircle(latLng,50);
+        addGeofence(latLng,50);
         mMap.addMarker(new MarkerOptions().position(latLng).title("You"));
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng,16));
         enableUserLocation();
@@ -149,8 +149,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private void handleMapLongClick(LatLng latLng){
         mMap.clear();
         addMarker(latLng);
-        addCircle(latLng, 200);
-        addGeofence(latLng,200);
+        addCircle(latLng, 50);
+       // addGeofence(latLng,50);
     }
 
     private void getCurrentLocation() {
