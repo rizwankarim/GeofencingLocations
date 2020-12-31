@@ -44,7 +44,7 @@ import java.util.Locale;
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, GoogleMap.OnMapLongClickListener {
 
 
-    private GoogleMap mMap;
+    public static GoogleMap mMap;
     private GeofencingClient geofencingClient;
     private GeofenceHelper geofenceHelper;
     public LatLng myLatlng;
@@ -81,8 +81,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     public void onMapStart(LatLng latLng){
-        addCircle(latLng,50);
-        addGeofence(latLng,50);
+        addCircle(latLng,100);
+        addGeofence(latLng,100);
         mMap.addMarker(new MarkerOptions().position(latLng).title("You"));
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng,16));
         enableUserLocation();
@@ -149,7 +149,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private void handleMapLongClick(LatLng latLng){
         mMap.clear();
         addMarker(latLng);
-        addCircle(latLng, 50);
+        addCircle(latLng, 100);
        // addGeofence(latLng,50);
     }
 
@@ -246,7 +246,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mMap.addMarker(markerOptions);
     }
 
-    private void addCircle(LatLng latLng, float radius){
+    public static void addCircle(LatLng latLng, float radius){
         CircleOptions circleOptions= new CircleOptions();
         circleOptions.center(latLng);
         circleOptions.radius(radius);

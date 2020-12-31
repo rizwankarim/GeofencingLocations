@@ -210,7 +210,9 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
                             double current_long=locationResult.getLocations().get(locationindex).getLongitude();
                             LatLng myLatlng= new LatLng(current_lat,current_long);
                             Log.d("Location", String.valueOf(current_lat) + "," + String.valueOf(current_long));
-                            addGeofence(context,myLatlng,50);
+                            addGeofence(context,myLatlng,100);
+                            MapsActivity.mMap.clear();
+                            MapsActivity.addCircle(myLatlng,100);
                         }
                     }
                 }, Looper.getMainLooper());
