@@ -50,7 +50,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     public String myCurrentAddress;
     public String address;
     private String GEOFENCE_ID = "SOME_GEOFENCE_ID";
-
+    public static boolean isRunning=false;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -253,5 +253,18 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         circleOptions.fillColor(Color.argb(64,255,0,0));
         circleOptions.strokeWidth(4);
         mMap.addCircle(circleOptions);
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        isRunning=true;
+
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        isRunning=false;
     }
 }

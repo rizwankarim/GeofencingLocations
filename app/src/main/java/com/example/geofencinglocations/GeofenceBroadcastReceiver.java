@@ -200,8 +200,16 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
                             LatLng myLatlng= new LatLng(current_lat,current_long);
                             Log.d("Location", String.valueOf(current_lat) + "," + String.valueOf(current_long));
                             addGeofence(context,myLatlng,100);
-                             //   MapsActivity.mMap.clear();
-                            //  MapsActivity.addCircle(myLatlng,100);
+                            if(MapsActivity.isRunning)
+                            {
+                                MapsActivity.mMap.clear();
+                                MapsActivity.addCircle(myLatlng,100);
+                            }
+                            else
+                                {
+
+                                }
+
                         }
                     }
                 }, Looper.getMainLooper());
