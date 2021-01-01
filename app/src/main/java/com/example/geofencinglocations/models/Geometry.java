@@ -6,19 +6,19 @@ import com.google.gson.annotations.SerializedName;
 public class Geometry {
     @SerializedName("location")
     @Expose
-    private com.example.jobscheduler.nearbyResponse.Location location;
+    private Location location;
 
     /**
      * @return The location
      */
-    public com.example.jobscheduler.nearbyResponse.Location getLocation() {
+    public Location getLocation() {
         return location;
     }
 
     /**
      * @param location The location
      */
-    public void setLocation(com.example.jobscheduler.nearbyResponse.Location location) {
+    public void setLocation(Location location) {
         this.location = location;
     }
 }

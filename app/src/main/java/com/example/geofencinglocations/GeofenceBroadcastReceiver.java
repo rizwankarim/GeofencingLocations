@@ -6,6 +6,8 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.location.Address;
+import android.location.Geocoder;
 import android.os.AsyncTask;
 import android.os.Looper;
 import android.util.Log;
@@ -16,6 +18,12 @@ import androidx.core.app.ActivityCompat;
 
 import com.example.geofencinglocations.api.Api;
 import com.example.geofencinglocations.api.RequestHandler;
+import com.example.geofencinglocations.models.Example;
+import com.example.geofencinglocations.models.ResponseModel;
+import com.example.geofencinglocations.models.nearbyPlace;
+import com.example.geofencinglocations.models.place;
+import com.example.geofencinglocations.retrofit.ApiClient;
+import com.example.geofencinglocations.retrofit.ApiInterface;
 import com.google.android.gms.location.Geofence;
 import com.google.android.gms.location.GeofencingClient;
 import com.google.android.gms.location.GeofencingEvent;
@@ -32,26 +40,35 @@ import com.google.android.gms.tasks.OnSuccessListener;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.IOException;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.TimeZone;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 
 public class GeofenceBroadcastReceiver extends BroadcastReceiver {
 
-   public static String StartTime="";
-   String EndTime="";
-   public GeofencingClient geofencingClient;
-   public  GeofenceHelper geofenceHelper;
-   public  String GEOFENCE_ID = "SOME_GEOFENCE_ID";
-   int min;
+    public static String StartTime = "";
+    String EndTime = "";
+    public GeofencingClient geofencingClient;
+    public GeofenceHelper geofenceHelper;
+    public String GEOFENCE_ID = "SOME_GEOFENCE_ID";
+    int min;
+    public LatLng myLatlng;
     private static final int CODE_GET_REQUEST = 1024;
     private static final int CODE_POST_REQUEST = 1025;
+    List<nearbyPlace> nearbyDetails;
 
     @Override
     public void onReceive(Context context, Intent intent) {
@@ -104,31 +121,12 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
                 String localTimeLater = date2.format(currentLocalTime2);
                 EndTime= localTimeLater;
                 notificationHelper.sendHighPriorityNotification("Exit","Exit from the selected zone at "+localTimeLater, MapsActivity.class);
-                int hours=getHours(StartTime,EndTime);
-
                 Toast.makeText(context, StartTime, Toast.LENGTH_SHORT).show();
                 min= getMinutes(context,StartTime,EndTime);
                 //getCurrentLocation(context);
                 checkCondition(context,min);
                 break;
         }
-    }
-    public int getHours(String d1,String d2)
-    {
-        int hours=0;
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        try {
-            Date date1  = simpleDateFormat.parse(d1);
-            Date date2 = simpleDateFormat.parse(d2);
-            long difference = date2.getTime() - date1.getTime();
-            int days = (int) (difference / (1000*60*60*24));
-            hours= (int) ((difference - (1000*60*60*24*days)) / (1000*60*60));
-            int min = (int) (difference - (1000*60*60*24*days) - (1000*60*60*hours)) / (1000*60);
-            hours = (hours < 0 ? -hours : hours);
-        } catch (ParseException e) {
-            e.printStackTrace();
-        }
-        return hours;
     }
 
     public int getMinutes(Context context,String d1,String d2)
@@ -197,7 +195,7 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
                             int locationindex = locationResult.getLocations().size() - 1;
                             double current_lat=locationResult.getLocations().get(locationindex).getLatitude();
                             double current_long=locationResult.getLocations().get(locationindex).getLongitude();
-                            LatLng myLatlng= new LatLng(current_lat,current_long);
+                            myLatlng= new LatLng(current_lat,current_long);
                             Log.d("Location", String.valueOf(current_lat) + "," + String.valueOf(current_long));
                             addGeofence(context,myLatlng,100);
                             if(MapsActivity.isRunning)
@@ -217,16 +215,17 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
 
     public void checkCondition(Context context,int myMin){
         Toast.makeText(context, "Min : "+Integer.toString(myMin), Toast.LENGTH_SHORT).show();
-          if(myMin < 1){
+          if(myMin < 3){
                     Toast.makeText(context, "No nearby...", Toast.LENGTH_SHORT).show();
                     getCurrentLocation(context);
-                    //addGeofence(context,myLatlng,200);
+                    addGeofence(context,myLatlng,200);
                 }
                 else{
                     Toast.makeText(context, "Nearby Success...", Toast.LENGTH_SHORT).show();
+                    getNearByDetails(context,myLatlng,"@string/google_maps_key");
                     getCurrentLocation(context);
-                    //addGeofence(context,myLatlng,50);
-              showNearby("GuzFS0EjtBSwuRXBuRfhFN8ZSfm1");
+                    addGeofence(context,myLatlng,50);
+
                 }
 
 
@@ -235,6 +234,80 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
     private void showNearby(String userId) {
         PerformNetworkRequest request = new PerformNetworkRequest(Api.URL_READ_LIST+userId, null, CODE_GET_REQUEST);
         request.execute();
+    }
+
+    public void getNearByDetails(Context context, LatLng latLng, String api_key){
+        String location=latLng.latitude+","+latLng.longitude;
+        final place myPlace=getGeocodingDetails(context,latLng.latitude,latLng.longitude);
+        nearbyDetails= new ArrayList<>();
+        final ApiInterface apiInterface= ApiClient.getClient().create(ApiInterface.class);
+        Call<Example> call= apiInterface.getDetails(location,100,api_key);
+        call.enqueue(new Callback<Example>() {
+            @Override
+            public void onResponse(Call<Example> call, Response<Example> response) {
+                if(response.isSuccessful()){
+                    try
+                    {
+                        for(int i=0;i<response.body().getResults().size();i++)
+                        {
+                            String placeName=response.body().getResults().get(i).getName();
+                            Double lat = response.body().getResults().get(i).getGeometry().getLocation().getLat();
+                            Double lng = response.body().getResults().get(i).getGeometry().getLocation().getLng();
+                            List<String> placeType=response.body().getResults().get(i).getTypes();
+                            nearbyPlace nearby=new nearbyPlace(placeName,lat,lng,placeType,myPlace.getPlaceAddress());
+                            nearbyDetails.add(nearby);
+                        }
+
+                    }
+                    catch (Exception er)
+                    {
+                        Log.d("showPLace err ",er.getMessage());
+
+                    }
+                    Log.d("showPLace success",response.body().toString());
+
+                }
+                else
+                {
+                    Log.d("Else Response: " , response.message());
+
+                }
+            }
+
+            @Override
+            public void onFailure(Call<Example> call, Throwable t) {
+
+            }
+        });
+
+    }
+
+    private place getGeocodingDetails(Context context,double Latitude, double Longitude){
+        Geocoder geocoder;
+        place completeDetails=null;
+        List<Address> addresses= new ArrayList<>();
+        geocoder=new Geocoder(context, Locale.getDefault());
+
+        try {
+            addresses= geocoder.getFromLocation(Latitude,Longitude,1);
+            String address = addresses.get(0).getAddressLine(0); // If any additional address line present than only, check with max available address lines by getMaxAddressLineIndex()
+            String city = addresses.get(0).getLocality();
+            String state = addresses.get(0).getAdminArea();
+            String country = addresses.get(0).getCountryName();
+            String postalCode = addresses.get(0).getPostalCode();
+            String knownName = addresses.get(0).getFeatureName();
+
+            SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+            Date date = new Date();
+            String time=formatter.format(date).toString();
+
+            completeDetails= new place("GuzFS0EjtBSwuRXBuRfhFN8ZSfm1",Latitude,Longitude,address,"pending",time);
+            Log.d("LOCATION_DETAILS",completeDetails.toString());
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return completeDetails;
     }
 
     private class PerformNetworkRequest  extends AsyncTask<Void, Void, String> {
