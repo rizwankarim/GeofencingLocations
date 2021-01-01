@@ -6,15 +6,16 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.os.Build;
+import android.os.AsyncTask;
 import android.os.Looper;
 import android.util.Log;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.core.app.ActivityCompat;
 
+import com.example.geofencinglocations.api.Api;
+import com.example.geofencinglocations.api.RequestHandler;
 import com.google.android.gms.location.Geofence;
 import com.google.android.gms.location.GeofencingClient;
 import com.google.android.gms.location.GeofencingEvent;
@@ -28,15 +29,17 @@ import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 
 
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.TimeZone;
-import java.util.concurrent.TimeUnit;
 
 
 public class GeofenceBroadcastReceiver extends BroadcastReceiver {
@@ -47,6 +50,8 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
    public  GeofenceHelper geofenceHelper;
    public  String GEOFENCE_ID = "SOME_GEOFENCE_ID";
    int min;
+    private static final int CODE_GET_REQUEST = 1024;
+    private static final int CODE_POST_REQUEST = 1025;
 
     @Override
     public void onReceive(Context context, Intent intent) {
@@ -195,8 +200,8 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
                             LatLng myLatlng= new LatLng(current_lat,current_long);
                             Log.d("Location", String.valueOf(current_lat) + "," + String.valueOf(current_long));
                             addGeofence(context,myLatlng,100);
-                            MapsActivity.mMap.clear();
-                            MapsActivity.addCircle(myLatlng,100);
+                             //   MapsActivity.mMap.clear();
+                            //  MapsActivity.addCircle(myLatlng,100);
                         }
                     }
                 }, Looper.getMainLooper());
@@ -213,9 +218,70 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
                     Toast.makeText(context, "Nearby Success...", Toast.LENGTH_SHORT).show();
                     getCurrentLocation(context);
                     //addGeofence(context,myLatlng,50);
+              showNearby("GuzFS0EjtBSwuRXBuRfhFN8ZSfm1");
                 }
 
 
     }
 
+    private void showNearby(String userId) {
+        PerformNetworkRequest request = new PerformNetworkRequest(Api.URL_READ_LIST+userId, null, CODE_GET_REQUEST);
+        request.execute();
+    }
+
+    private class PerformNetworkRequest  extends AsyncTask<Void, Void, String> {
+
+        //the url where we need to send the request
+        String url;
+        //the parameters
+        HashMap<String, String> params;
+        //the request code to define whether it is a GET or POST
+        int requestCode;
+
+        //constructor to initialize values
+        PerformNetworkRequest(String url, HashMap<String, String> params, int requestCode) {
+            this.url = url;
+            this.params = params;
+            this.requestCode = requestCode;
+        }
+
+        //when the task started displaying a progressbar
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+        }
+
+
+        //this method will give the response from the request
+        @Override
+        protected void onPostExecute(String s) {
+            super.onPostExecute(s);
+            try {
+                JSONObject object = new JSONObject(s);
+                if (!object.getBoolean("error")) {
+                    //refreshing the herolist after every operation
+                    //so we get an updated list
+                    //we will create this method right now it is commented
+                    //because we haven't created it yet
+                   // refreshHistoryList(object.getJSONArray("lists"));
+                }
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
+
+        //the network operation will be performed in background
+        @Override
+        protected String doInBackground(Void... voids) {
+            RequestHandler requestHandler = new RequestHandler();
+
+            if (requestCode == CODE_POST_REQUEST)
+                return requestHandler.sendPostRequest(url, params);
+
+            if (requestCode == CODE_GET_REQUEST)
+                return requestHandler.sendGetRequest(url);
+
+            return null;
+        }
+    }
 }
