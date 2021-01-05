@@ -241,6 +241,9 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
                             Log.d("Location", String.valueOf(current_lat) + "," + String.valueOf(current_long));
                             if(myLatlng!=null)
                             {
+                                addGeofence(context,myLatlng.latitude,myLatlng.longitude,100);
+
+                               /*
                                 if(MapsActivity.isRunning)
                                 {
                                     MapsActivity.mMap.clear();
@@ -251,6 +254,8 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
                                 {
                                     addGeofence(context,myLatlng.latitude,myLatlng.longitude,100);
                                 }
+
+                                */
 
 
                             }else
@@ -321,7 +326,7 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
                 }
                 else{
                     Toast.makeText(context, "Nearby Success...", Toast.LENGTH_SHORT).show();
-                    getNearByDetails(context,myLatlng,"@string/google_maps_key");
+                 //   getNearByDetails(context,myLatlng,"@string/google_maps_key");
                     getCurrentLocation(context);
                   //  addGeofence(context,myLatlng.latitude,myLatlng.longitude,200);
 

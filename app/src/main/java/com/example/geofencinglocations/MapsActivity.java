@@ -2,6 +2,8 @@ package com.example.geofencinglocations;
 
 import android.Manifest;
 import android.app.PendingIntent;
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.location.Address;
@@ -9,6 +11,7 @@ import android.location.Geocoder;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Looper;
+import android.preference.PreferenceManager;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -33,8 +36,11 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
 import java.io.IOException;
+import java.lang.reflect.Type;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -76,16 +82,38 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
-        getCurrentLocation();
+
+            getCurrentLocation();
+
     }
 
-    public void onMapStart(LatLng latLng){
+    public void onMapStart(LatLng latLng)
+    {
+
         addCircle(latLng,100);
         addGeofence(latLng,100);
         mMap.addMarker(new MarkerOptions().position(latLng).title("You"));
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng,16));
         enableUserLocation();
         mMap.setOnMapLongClickListener(this);
+    }
+
+    public void saveArrayList(Context context, ArrayList<LatLng> list, String key){
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+        SharedPreferences.Editor editor = prefs.edit();
+        Gson gson = new Gson();
+        String json = gson.toJson(list);
+        editor.putString(key, json);
+        editor.apply();
+
+    }
+
+    public ArrayList<LatLng> getArrayList(Context context,String key){
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+        Gson gson = new Gson();
+        String json = prefs.getString(key, null);
+        Type type = new TypeToken<ArrayList<LatLng>>() {}.getType();
+        return gson.fromJson(json, type);
     }
 
     private void enableUserLocation() {
