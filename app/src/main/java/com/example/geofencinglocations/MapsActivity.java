@@ -82,19 +82,17 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
-
-            getCurrentLocation();
+            enableUserLocation();
+            mMap.setOnMapLongClickListener(this);
 
     }
 
     public void onMapStart(LatLng latLng)
     {
-
-        addCircle(latLng,100);
-        addGeofence(latLng,100);
+        addCircle(latLng,200);
+        addGeofence(latLng,200);
         mMap.addMarker(new MarkerOptions().position(latLng).title("You"));
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng,16));
-        enableUserLocation();
         mMap.setOnMapLongClickListener(this);
     }
 
@@ -119,6 +117,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private void enableUserLocation() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             mMap.setMyLocationEnabled(true);
+            getCurrentLocation();
         } else {
             if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.ACCESS_FINE_LOCATION)) {
                 ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 10001);
@@ -135,6 +134,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
                 }
                 mMap.setMyLocationEnabled(true);
+
             }
         }
 
