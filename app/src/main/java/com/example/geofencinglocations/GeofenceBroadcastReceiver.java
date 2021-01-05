@@ -1,17 +1,17 @@
 package com.example.geofencinglocations;
 
 import android.Manifest;
-import android.app.Activity;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Address;
 import android.location.Geocoder;
-import android.location.Location;
 import android.os.AsyncTask;
 import android.os.Looper;
+import android.preference.PreferenceManager;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -21,12 +21,10 @@ import androidx.core.app.ActivityCompat;
 import com.example.geofencinglocations.api.Api;
 import com.example.geofencinglocations.api.RequestHandler;
 import com.example.geofencinglocations.models.Example;
-import com.example.geofencinglocations.models.ResponseModel;
 import com.example.geofencinglocations.models.nearbyPlace;
 import com.example.geofencinglocations.models.place;
 import com.example.geofencinglocations.retrofit.ApiClient;
 import com.example.geofencinglocations.retrofit.ApiInterface;
-import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.Geofence;
 import com.google.android.gms.location.GeofencingClient;
 import com.google.android.gms.location.GeofencingEvent;
@@ -38,12 +36,15 @@ import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.lang.reflect.Type;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -54,7 +55,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
-import java.util.concurrent.Executor;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -73,7 +73,7 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
     private static final int CODE_GET_REQUEST = 1024;
     private static final int CODE_POST_REQUEST = 1025;
     List<nearbyPlace> nearbyDetails;
-
+    String address;
     @Override
     public void onReceive(Context context, Intent intent) {
         // TODO: This method is called when the BroadcastReceiver is receiving
@@ -82,9 +82,7 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
 
         geofencingClient = LocationServices.getGeofencingClient(context);
         geofenceHelper = new GeofenceHelper(context);
-
         NotificationHelper notificationHelper = new NotificationHelper(context);
-
         myLatlng = new LatLng(0.0, 0.0);
 
         GeofencingEvent geofencingEvent = GeofencingEvent.fromIntent(intent);
@@ -120,6 +118,21 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
 
             case Geofence.GEOFENCE_TRANSITION_EXIT:
                 Toast.makeText(context, "Exit from the selected zone", Toast.LENGTH_SHORT).show();
+                ArrayList<LatLng> currentLocationsList=getArrayList(context,"mylist");
+                Toast.makeText(context, "size "+Integer.toString(currentLocationsList.size()), Toast.LENGTH_SHORT).show();
+                if(currentLocationsList.size()>1)
+                {
+                    int size=currentLocationsList.size();
+                    String prev_Address=getAddress(context,currentLocationsList.get(size-2));
+                    String current_Address=getAddress(context,currentLocationsList.get(size-1));
+
+                    Log.d("Previous Location",prev_Address);
+                    Log.d("Break","-------------------");
+                    Log.d("Current Location",current_Address);
+                }else
+                {
+
+                }
                 Calendar cal2 = Calendar.getInstance(TimeZone.getTimeZone("GMT+5:00"));
                 Date currentLocalTime2 = cal2.getTime();
                 DateFormat date2 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -133,6 +146,7 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
                 checkCondition(context, min);
                 // get previous value of lat long
                 // call nearby pass values
+
 
                 break;
         }
@@ -206,27 +220,96 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
                             double current_lat=locationResult.getLocations().get(locationindex).getLatitude();
                             double current_long=locationResult.getLocations().get(locationindex).getLongitude();
                             myLatlng= new LatLng(current_lat,current_long);
+
+                            SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(context);
+
+                            if(!sharedPrefs.contains("mylist"))
+                            {
+                                Log.d("Dont Exists","creating");
+                                ArrayList<LatLng> latlongList=new ArrayList<>();
+                                latlongList.add(myLatlng);
+                                saveArrayList(context,latlongList,"mylist");
+                            }else
+                                {
+                                    Log.d("Exists","updating");
+                                    ArrayList<LatLng> latlongList=getArrayList(context,"mylist");
+                                    latlongList.add(myLatlng);
+                                    saveArrayList(context,latlongList,"mylist");
+
+                                }
+
                             Log.d("Location", String.valueOf(current_lat) + "," + String.valueOf(current_long));
                             if(myLatlng!=null)
                             {
-                                addGeofence(context,myLatlng.latitude,myLatlng.longitude,100);
+                                if(MapsActivity.isRunning)
+                                {
+                                    MapsActivity.mMap.clear();
+                                    MapsActivity.addCircle(myLatlng,100);
+                                    addGeofence(context,myLatlng.latitude,myLatlng.longitude,100);
+                                }
+                                else
+                                {
+                                    addGeofence(context,myLatlng.latitude,myLatlng.longitude,100);
+                                }
+
+
                             }else
                                 {
                                     Log.d("Receiever",myLatlng.toString());
                                 }
-                            if(MapsActivity.isRunning)
-                            {
-                                MapsActivity.mMap.clear();
-                                MapsActivity.addCircle(myLatlng,100);
-                            }
-                            else
-                                {
 
-                                }
 
                         }
                     }
                 }, Looper.getMainLooper());
+    }
+
+    public void saveArrayList(Context context,ArrayList<LatLng> list, String key){
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+        SharedPreferences.Editor editor = prefs.edit();
+        Gson gson = new Gson();
+        String json = gson.toJson(list);
+        editor.putString(key, json);
+        editor.apply();
+
+    }
+
+    public ArrayList<LatLng> getArrayList(Context context,String key){
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+        Gson gson = new Gson();
+        String json = prefs.getString(key, null);
+        Type type = new TypeToken<ArrayList<LatLng>>() {}.getType();
+        return gson.fromJson(json, type);
+    }
+
+    public String getAddress(Context context, LatLng latLng){
+
+        Geocoder geocoder;
+        List<Address> addresses = new ArrayList<>();
+        geocoder = new Geocoder(context, Locale.getDefault());
+
+        try {
+            Toast.makeText(context, "loc getting 2", Toast.LENGTH_SHORT).show();
+            addresses = geocoder.getFromLocation(latLng.latitude,latLng.longitude, 1);
+            address = addresses.get(0).getAddressLine(0); // If any additional address line present than only, check with max available address lines by getMaxAddressLineIndex()
+            String city = addresses.get(0).getLocality();
+            String state = addresses.get(0).getAdminArea();
+            String country = addresses.get(0).getCountryName();
+            String postalCode = addresses.get(0).getPostalCode();
+            String knownName = addresses.get(0).getFeatureName();
+
+            SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+            Date date = new Date();
+            String time = formatter.format(date).toString();
+
+            //completeDetails = new place("GuzFS0EjtBSwuRXBuRfhFN8ZSfm1", latitude, longitude, address, "pending", time);
+            //Log.d("LOCATION_DETAILS", completeDetails.toString());
+            Toast.makeText(context, "Got loc 2", Toast.LENGTH_SHORT).show();
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return address;
     }
 
     public void checkCondition(Context context,int myMin){
@@ -234,13 +317,13 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
           if(myMin < 3){
                     Toast.makeText(context, "No nearby...", Toast.LENGTH_SHORT).show();
                     getCurrentLocation(context);
-                    addGeofence(context,myLatlng.latitude,myLatlng.longitude,200);
+                  //  addGeofence(context,myLatlng.latitude,myLatlng.longitude,200);
                 }
                 else{
                     Toast.makeText(context, "Nearby Success...", Toast.LENGTH_SHORT).show();
                     getNearByDetails(context,myLatlng,"@string/google_maps_key");
                     getCurrentLocation(context);
-                    addGeofence(context,myLatlng.latitude,myLatlng.longitude,200);
+                  //  addGeofence(context,myLatlng.latitude,myLatlng.longitude,200);
 
                 }
 
