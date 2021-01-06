@@ -109,8 +109,7 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
                 break;
 
             case Geofence.GEOFENCE_TRANSITION_EXIT:
-                String localTimeLater = getTimeOnTransaction();
-                EndTime = localTimeLater;
+                EndTime = getTimeOnTransaction();
                 min = getMinutes(context, StartTime, EndTime);
                 notificationHelper.sendHighPriorityNotification("Exit", "Exit from the selected zone after " + min +" minutes.", MainActivity.class);
                 checkCondition(context, min);
