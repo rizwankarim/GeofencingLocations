@@ -99,22 +99,19 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
 
         switch (transitionType) {
             case Geofence.GEOFENCE_TRANSITION_ENTER:
-                Toast.makeText(context, "Entering on selected zone", Toast.LENGTH_SHORT).show();
                 Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("GMT+5:00"));
                 Date currentLocalTime = cal.getTime();
                 DateFormat date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
                 date.setTimeZone(TimeZone.getTimeZone("GMT+5:00"));
                 String localTimeNow = date.format(currentLocalTime);
                 StartTime = localTimeNow;
-                notificationHelper.sendHighPriorityNotification("Entry", "Entering on selected zone at " + StartTime, MapsActivity.class);
+                notificationHelper.sendHighPriorityNotification("Entry", "Entering on selected zone at " + StartTime, MainActivity.class);
 
-                //String time=Integer.toString(hours)+":"+Integer.toString(min);
-                //notificationHelper.sendHighPriorityNotification("Notify : ","Time Is "+time, MapsActivity.class);
                 break;
 
             case Geofence.GEOFENCE_TRANSITION_DWELL:
                 Toast.makeText(context, "In the selected zone", Toast.LENGTH_SHORT).show();
-                notificationHelper.sendHighPriorityNotification("Dwell", "In the selected zone", MapsActivity.class);
+                notificationHelper.sendHighPriorityNotification("Dwell", "In the selected zone", MainActivity.class);
                 break;
 
             case Geofence.GEOFENCE_TRANSITION_EXIT:
@@ -138,15 +135,9 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
                 date2.setTimeZone(TimeZone.getTimeZone("GMT+5:00"));
                 String localTimeLater = date2.format(currentLocalTime2);
                 EndTime = localTimeLater;
-                notificationHelper.sendHighPriorityNotification("Exit", "Exit from the selected zone at " + localTimeLater, MapsActivity.class);
-                Toast.makeText(context, StartTime, Toast.LENGTH_SHORT).show();
                 min = getMinutes(context, StartTime, EndTime);
-                //  getCurrentLocation(context);
+                notificationHelper.sendHighPriorityNotification("Exit", "Exit from the selected zone after " + min +" minutes.", MainActivity.class);
                 checkCondition(context, min);
-                // get previous value of lat long
-                // call nearby pass values
-
-
                 break;
         }
     }
@@ -197,7 +188,6 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
                     }
                 });
     }
-
 
     private void getCurrentLocation(Context context) {
         LocationRequest locationRequest = new LocationRequest();
@@ -290,19 +280,15 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
     }
 
     public void checkCondition(Context context, int myMin) {
-        Toast.makeText(context, "Min : " + Integer.toString(myMin), Toast.LENGTH_SHORT).show();
         if (myMin < 3) {
             Toast.makeText(context, "No nearby...", Toast.LENGTH_SHORT).show();
             getCurrentLocation(context);
-            //
+
         } else {
             Toast.makeText(context, "Nearby Success...", Toast.LENGTH_SHORT).show();
             //   getNearByDetails(context,myLatlng,"@string/google_maps_key");
             getCurrentLocation(context);
-            //  addGeofence(context,myLatlng.latitude,myLatlng.longitude,200);
-
         }
-
     }
 
     private void showNearby(String userId) {
