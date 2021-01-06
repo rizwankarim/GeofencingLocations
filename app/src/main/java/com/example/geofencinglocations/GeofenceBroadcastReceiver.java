@@ -123,8 +123,9 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
             getCurrentLocation(context);
 
         } else {
-            Toast.makeText(context, "Nearby Success...", Toast.LENGTH_SHORT).show();
+            Toast.makeText(context, "Nearby doing...", Toast.LENGTH_SHORT).show();
             getNearByDetails(context,myLatlng);
+            Toast.makeText(context, "Data store...", Toast.LENGTH_SHORT).show();
             getCurrentLocation(context);
         }
     }
