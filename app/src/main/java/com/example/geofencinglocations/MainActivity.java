@@ -136,7 +136,7 @@ public class MainActivity extends AppCompatActivity {
                             double current_lat = locationResult.getLocations().get(locationindex).getLatitude();
                             double current_long = locationResult.getLocations().get(locationindex).getLongitude();
                             myLatlng = new LatLng(current_lat, current_long);
-                            addGeofence(myLatlng,200);
+                            addGeofence(myLatlng,100);
                             Log.d("Location", String.valueOf(current_lat) + "," + String.valueOf(current_long));
                         }
                     }
