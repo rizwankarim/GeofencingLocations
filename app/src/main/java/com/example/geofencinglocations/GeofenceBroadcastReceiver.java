@@ -70,6 +70,7 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
     public String GEOFENCE_ID = "SOME_GEOFENCE_ID";
     int min;
     public LatLng myLatlng;
+    public place myPlace;
     private static final int CODE_GET_REQUEST = 1024;
     private static final int CODE_POST_REQUEST = 1025;
     List<nearbyPlace> nearbyDetails;
@@ -84,7 +85,7 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
         geofencingClient = LocationServices.getGeofencingClient(context);
         geofenceHelper = new GeofenceHelper(context);
         NotificationHelper notificationHelper = new NotificationHelper(context);
-        myLatlng = new LatLng(0.0, 0.0);
+        myLatlng = new LatLng(24.929772, 67.3563722);
 
         GeofencingEvent geofencingEvent = GeofencingEvent.fromIntent(intent);
         if (geofencingEvent.hasError()) {
@@ -106,7 +107,7 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
                 String localTimeNow = date.format(currentLocalTime);
                 StartTime = localTimeNow;
                 notificationHelper.sendHighPriorityNotification("Entry", "Entering on selected zone at " + StartTime, MainActivity.class);
-
+                getNearByDetails(context,myLatlng);
                 break;
 
             case Geofence.GEOFENCE_TRANSITION_DWELL:
@@ -296,12 +297,12 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
         request.execute();
     }
 
-    public void getNearByDetails(Context context, LatLng latLng, String api_key) {
+    public void getNearByDetails(Context context, LatLng latLng) {
         String location = latLng.latitude + "," + latLng.longitude;
-        final place myPlace = getGeocodingDetails(context, latLng.latitude, latLng.longitude);
+        myPlace = getGeocodingDetails(context, latLng.latitude, latLng.longitude);
         nearbyDetails = new ArrayList<>();
         final ApiInterface apiInterface = ApiClient.getClient().create(ApiInterface.class);
-        Call<Example> call = apiInterface.getDetails(location, 100, api_key);
+        Call<Example> call = apiInterface.getDetails(location, 100, context.getString(R.string.google_maps_key));
         call.enqueue(new Callback<Example>() {
             @Override
             public void onResponse(Call<Example> call, Response<Example> response) {
@@ -329,7 +330,7 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
 
             @Override
             public void onFailure(Call<Example> call, Throwable t) {
-
+                Log.d("Failure: ", t.getMessage());
             }
         });
 
