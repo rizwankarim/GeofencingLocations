@@ -119,19 +119,21 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
 
             case Geofence.GEOFENCE_TRANSITION_EXIT:
                 Toast.makeText(context, "Exit from the selected zone", Toast.LENGTH_SHORT).show();
-//                ArrayList<LatLng> currentLocationsList = getArrayList(context, "mylist");
-//                Toast.makeText(context, "size " + Integer.toString(currentLocationsList.size()), Toast.LENGTH_SHORT).show();
-//                if (currentLocationsList.size() > 1) {
-//                    int size = currentLocationsList.size();
-//                    String prev_Address = getAddress(context, currentLocationsList.get(size - 2));
-//                    String current_Address = getAddress(context, currentLocationsList.get(size - 1));
-//
-//                    Log.d("Previous Location", prev_Address);
-//                    Log.d("Break", "-------------------");
-//                    Log.d("Current Location", current_Address);
-//                } else {
-//
-//                }
+                ArrayList<LatLng> currentLocationsList = getArrayList(context, "locList");
+                Toast.makeText(context, "size " + Integer.toString(currentLocationsList.size()), Toast.LENGTH_SHORT).show();
+                if (currentLocationsList.size() > 1)
+                {
+                    int size = currentLocationsList.size();
+                    String prev_Address = getAddress(context, currentLocationsList.get(size - 2));
+                    String current_Address = getAddress(context, currentLocationsList.get(size - 1));
+
+                    Log.d("Previous Location", prev_Address);
+                    Log.d("Break", "-------------------");
+                    Log.d("Current Location", current_Address);
+                }
+                else {
+
+                }
                 Calendar cal2 = Calendar.getInstance(TimeZone.getTimeZone("GMT+5:00"));
                 Date currentLocalTime2 = cal2.getTime();
                 DateFormat date2 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -213,19 +215,22 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
                             double current_long = locationResult.getLocations().get(locationindex).getLongitude();
                             myLatlng = new LatLng(current_lat, current_long);
                             addGeofence(context,myLatlng.latitude,myLatlng.longitude,200);
-//                            SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(context);
-//
-//                            if (!sharedPrefs.contains("mylist")) {
-//                                Log.d("Dont Exists", "creating");
-//                                ArrayList<LatLng> latlongList = new ArrayList<>();
-//                                latlongList.add(myLatlng);
-//                                saveArrayList(context, latlongList, "mylist");
-//                            } else {
-//                                Log.d("Exists", "updating");
-//                                ArrayList<LatLng> latlongList = getArrayList(context, "mylist");
-//                                latlongList.add(myLatlng);
-//                                saveArrayList(context, latlongList, "mylist");
-//                            }
+                            SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(context);
+
+                            if (!sharedPrefs.contains("locList"))
+                            {
+                                Log.d("Dont Exists", "creating");
+                                ArrayList<LatLng> latlongList = new ArrayList<>();
+                                latlongList.add(myLatlng);
+                                saveArrayList(context, latlongList, "locList");
+                            }
+                            else
+                                {
+                                Log.d("Exists", "updating");
+                                ArrayList<LatLng> latlongList = getArrayList(context, "locList");
+                                latlongList.add(myLatlng);
+                                saveArrayList(context, latlongList, "locList");
+                                }
 
                             Log.d("Location", String.valueOf(current_lat) + "," + String.valueOf(current_long));
                         }
