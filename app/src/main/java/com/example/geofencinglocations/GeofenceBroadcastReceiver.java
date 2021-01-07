@@ -64,7 +64,7 @@ import retrofit2.Response;
 public class GeofenceBroadcastReceiver extends BroadcastReceiver {
 
     public static String StartTime = "";
-    String EndTime = "";
+    public static String EndTime = "";
     public GeofencingClient geofencingClient;
     public GeofenceHelper geofenceHelper;
     public String GEOFENCE_ID = "SOME_GEOFENCE_ID";
@@ -101,15 +101,8 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
 
         switch (transitionType) {
             case Geofence.GEOFENCE_TRANSITION_ENTER:
-                //djfhsdjfh
-                Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("GMT+5:00"));
-                Date currentLocalTime = cal.getTime();
-                DateFormat date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-                date.setTimeZone(TimeZone.getTimeZone("GMT+5:00"));
-                String localTimeNow = date.format(currentLocalTime);
-                StartTime = localTimeNow;
+                StartTime = getTimeOnTransaction();
                 notificationHelper.sendHighPriorityNotification("Entry", "Entering on selected zone at " + StartTime, MainActivity.class);
-                //getNearByDetails(context,myLatlng,"@string/google_maps_key");
                 break;
 
             case Geofence.GEOFENCE_TRANSITION_DWELL:
@@ -132,16 +125,23 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
 //                } else {
 //
 //                }
-                Calendar cal2 = Calendar.getInstance(TimeZone.getTimeZone("GMT+5:00"));
-                Date currentLocalTime2 = cal2.getTime();
-                DateFormat date2 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-                date2.setTimeZone(TimeZone.getTimeZone("GMT+5:00"));
-                String localTimeLater = date2.format(currentLocalTime2);
-                EndTime = localTimeLater;
+                EndTime = getTimeOnTransaction();
                 min = getMinutes(context, StartTime, EndTime);
                 notificationHelper.sendHighPriorityNotification("Exit", "Exit from the selected zone after " + min +" minutes.", MainActivity.class);
                 checkCondition(context, min);
                 break;
+        }
+    }
+
+    public void checkCondition(Context context, int myMin) {
+        if (myMin < 3) {
+            Toast.makeText(context, "No nearby...", Toast.LENGTH_SHORT).show();
+            getCurrentLocation(context);
+
+        } else {
+            Toast.makeText(context, "Nearby Success...", Toast.LENGTH_SHORT).show();
+            //   getNearByDetails(context,myLatlng,"@string/google_maps_key");
+            getCurrentLocation(context);
         }
     }
 
@@ -252,48 +252,6 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
         return gson.fromJson(json, type);
     }
 
-    public String getAddress(Context context, LatLng latLng) {
-
-        Geocoder geocoder;
-        List<Address> addresses = new ArrayList<>();
-        geocoder = new Geocoder(context, Locale.getDefault());
-
-        try {
-            Toast.makeText(context, "loc getting 2", Toast.LENGTH_SHORT).show();
-            addresses = geocoder.getFromLocation(latLng.latitude, latLng.longitude, 1);
-            address = addresses.get(0).getAddressLine(0); // If any additional address line present than only, check with max available address lines by getMaxAddressLineIndex()
-            String city = addresses.get(0).getLocality();
-            String state = addresses.get(0).getAdminArea();
-            String country = addresses.get(0).getCountryName();
-            String postalCode = addresses.get(0).getPostalCode();
-            String knownName = addresses.get(0).getFeatureName();
-
-            SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
-            Date date = new Date();
-            String time = formatter.format(date).toString();
-
-            //completeDetails = new place("GuzFS0EjtBSwuRXBuRfhFN8ZSfm1", latitude, longitude, address, "pending", time);
-            //Log.d("LOCATION_DETAILS", completeDetails.toString());
-            Toast.makeText(context, "Got loc 2", Toast.LENGTH_SHORT).show();
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return address;
-    }
-
-    public void checkCondition(Context context, int myMin) {
-        if (myMin < 3) {
-            Toast.makeText(context, "No nearby...", Toast.LENGTH_SHORT).show();
-            getCurrentLocation(context);
-
-        } else {
-            Toast.makeText(context, "Nearby Success...", Toast.LENGTH_SHORT).show();
-            //   getNearByDetails(context,myLatlng,"@string/google_maps_key");
-            getCurrentLocation(context);
-        }
-    }
-
     private void showNearby(String userId) {
         PerformNetworkRequest request = new PerformNetworkRequest(Api.URL_READ_LIST + userId, null, CODE_GET_REQUEST);
         request.execute();
@@ -364,6 +322,15 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
             e.printStackTrace();
         }
         return completeDetails;
+    }
+
+    public String getTimeOnTransaction(){
+        Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("GMT+5:00"));
+        Date currentLocalTime = cal.getTime();
+        DateFormat date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        date.setTimeZone(TimeZone.getTimeZone("GMT+5:00"));
+        String localTimeNow = date.format(currentLocalTime);
+        return localTimeNow;
     }
 
     private class PerformNetworkRequest extends AsyncTask<Void, Void, String> {
