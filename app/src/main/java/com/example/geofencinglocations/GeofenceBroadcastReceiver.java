@@ -64,7 +64,7 @@ import retrofit2.Response;
 public class GeofenceBroadcastReceiver extends BroadcastReceiver {
 
     public static String StartTime = "";
-    public static String EndTime = "";
+    String EndTime = "";
     public GeofencingClient geofencingClient;
     public GeofenceHelper geofenceHelper;
     public String GEOFENCE_ID = "SOME_GEOFENCE_ID";
@@ -101,8 +101,15 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
 
         switch (transitionType) {
             case Geofence.GEOFENCE_TRANSITION_ENTER:
-                StartTime = getTimeOnTransaction();
+                //djfhsdjfh
+                Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("GMT+5:00"));
+                Date currentLocalTime = cal.getTime();
+                DateFormat date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                date.setTimeZone(TimeZone.getTimeZone("GMT+5:00"));
+                String localTimeNow = date.format(currentLocalTime);
+                StartTime = localTimeNow;
                 notificationHelper.sendHighPriorityNotification("Entry", "Entering on selected zone at " + StartTime, MainActivity.class);
+                //getNearByDetails(context,myLatlng,"@string/google_maps_key");
                 break;
 
             case Geofence.GEOFENCE_TRANSITION_DWELL:
@@ -112,36 +119,31 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
 
             case Geofence.GEOFENCE_TRANSITION_EXIT:
                 Toast.makeText(context, "Exit from the selected zone", Toast.LENGTH_SHORT).show();
-//                ArrayList<LatLng> currentLocationsList = getArrayList(context, "mylist");
-//                Toast.makeText(context, "size " + Integer.toString(currentLocationsList.size()), Toast.LENGTH_SHORT).show();
-//                if (currentLocationsList.size() > 1) {
-//                    int size = currentLocationsList.size();
-//                    String prev_Address = getAddress(context, currentLocationsList.get(size - 2));
-//                    String current_Address = getAddress(context, currentLocationsList.get(size - 1));
-//
-//                    Log.d("Previous Location", prev_Address);
-//                    Log.d("Break", "-------------------");
-//                    Log.d("Current Location", current_Address);
-//                } else {
-//
-//                }
-                EndTime = getTimeOnTransaction();
+                ArrayList<LatLng> currentLocationsList = getArrayList(context, "locList");
+                Toast.makeText(context, "size " + Integer.toString(currentLocationsList.size()), Toast.LENGTH_SHORT).show();
+                if (currentLocationsList.size() > 1)
+                {
+                    int size = currentLocationsList.size();
+                    String prev_Address = getAddress(context, currentLocationsList.get(size - 2));
+                    String current_Address = getAddress(context, currentLocationsList.get(size - 1));
+
+                    Log.d("Previous Location", prev_Address);
+                    Log.d("Break", "-------------------");
+                    Log.d("Current Location", current_Address);
+                }
+                else {
+
+                }
+                Calendar cal2 = Calendar.getInstance(TimeZone.getTimeZone("GMT+5:00"));
+                Date currentLocalTime2 = cal2.getTime();
+                DateFormat date2 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                date2.setTimeZone(TimeZone.getTimeZone("GMT+5:00"));
+                String localTimeLater = date2.format(currentLocalTime2);
+                EndTime = localTimeLater;
                 min = getMinutes(context, StartTime, EndTime);
                 notificationHelper.sendHighPriorityNotification("Exit", "Exit from the selected zone after " + min +" minutes.", MainActivity.class);
                 checkCondition(context, min);
                 break;
-        }
-    }
-
-    public void checkCondition(Context context, int myMin) {
-        if (myMin < 3) {
-            Toast.makeText(context, "No nearby...", Toast.LENGTH_SHORT).show();
-            getCurrentLocation(context);
-
-        } else {
-            Toast.makeText(context, "Nearby Success...", Toast.LENGTH_SHORT).show();
-            //   getNearByDetails(context,myLatlng,"@string/google_maps_key");
-            getCurrentLocation(context);
         }
     }
 
@@ -213,19 +215,22 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
                             double current_long = locationResult.getLocations().get(locationindex).getLongitude();
                             myLatlng = new LatLng(current_lat, current_long);
                             addGeofence(context,myLatlng.latitude,myLatlng.longitude,200);
-//                            SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(context);
-//
-//                            if (!sharedPrefs.contains("mylist")) {
-//                                Log.d("Dont Exists", "creating");
-//                                ArrayList<LatLng> latlongList = new ArrayList<>();
-//                                latlongList.add(myLatlng);
-//                                saveArrayList(context, latlongList, "mylist");
-//                            } else {
-//                                Log.d("Exists", "updating");
-//                                ArrayList<LatLng> latlongList = getArrayList(context, "mylist");
-//                                latlongList.add(myLatlng);
-//                                saveArrayList(context, latlongList, "mylist");
-//                            }
+                            SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(context);
+
+                            if (!sharedPrefs.contains("locList"))
+                            {
+                                Log.d("Dont Exists", "creating");
+                                ArrayList<LatLng> latlongList = new ArrayList<>();
+                                latlongList.add(myLatlng);
+                                saveArrayList(context, latlongList, "locList");
+                            }
+                            else
+                                {
+                                Log.d("Exists", "updating");
+                                ArrayList<LatLng> latlongList = getArrayList(context, "locList");
+                                latlongList.add(myLatlng);
+                                saveArrayList(context, latlongList, "locList");
+                                }
 
                             Log.d("Location", String.valueOf(current_lat) + "," + String.valueOf(current_long));
                         }
@@ -250,6 +255,48 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
         Type type = new TypeToken<ArrayList<LatLng>>() {
         }.getType();
         return gson.fromJson(json, type);
+    }
+
+    public String getAddress(Context context, LatLng latLng) {
+
+        Geocoder geocoder;
+        List<Address> addresses = new ArrayList<>();
+        geocoder = new Geocoder(context, Locale.getDefault());
+
+        try {
+            Toast.makeText(context, "loc getting 2", Toast.LENGTH_SHORT).show();
+            addresses = geocoder.getFromLocation(latLng.latitude, latLng.longitude, 1);
+            address = addresses.get(0).getAddressLine(0); // If any additional address line present than only, check with max available address lines by getMaxAddressLineIndex()
+            String city = addresses.get(0).getLocality();
+            String state = addresses.get(0).getAdminArea();
+            String country = addresses.get(0).getCountryName();
+            String postalCode = addresses.get(0).getPostalCode();
+            String knownName = addresses.get(0).getFeatureName();
+
+            SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+            Date date = new Date();
+            String time = formatter.format(date).toString();
+
+            //completeDetails = new place("GuzFS0EjtBSwuRXBuRfhFN8ZSfm1", latitude, longitude, address, "pending", time);
+            //Log.d("LOCATION_DETAILS", completeDetails.toString());
+            Toast.makeText(context, "Got loc 2", Toast.LENGTH_SHORT).show();
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return address;
+    }
+
+    public void checkCondition(Context context, int myMin) {
+        if (myMin < 3) {
+            Toast.makeText(context, "No nearby...", Toast.LENGTH_SHORT).show();
+            getCurrentLocation(context);
+
+        } else {
+            Toast.makeText(context, "Nearby Success...", Toast.LENGTH_SHORT).show();
+            //   getNearByDetails(context,myLatlng,"@string/google_maps_key");
+            getCurrentLocation(context);
+        }
     }
 
     private void showNearby(String userId) {
@@ -322,15 +369,6 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
             e.printStackTrace();
         }
         return completeDetails;
-    }
-
-    public String getTimeOnTransaction(){
-        Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("GMT+5:00"));
-        Date currentLocalTime = cal.getTime();
-        DateFormat date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        date.setTimeZone(TimeZone.getTimeZone("GMT+5:00"));
-        String localTimeNow = date.format(currentLocalTime);
-        return localTimeNow;
     }
 
     private class PerformNetworkRequest extends AsyncTask<Void, Void, String> {
