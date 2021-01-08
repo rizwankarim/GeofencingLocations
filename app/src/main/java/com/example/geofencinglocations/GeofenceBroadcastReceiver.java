@@ -9,7 +9,6 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Address;
 import android.location.Geocoder;
-import android.os.AsyncTask;
 import android.os.Looper;
 import android.preference.PreferenceManager;
 import android.util.Log;
@@ -18,8 +17,6 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 
-import com.example.geofencinglocations.api.Api;
-import com.example.geofencinglocations.api.RequestHandler;
 import com.example.geofencinglocations.models.Example;
 import com.example.geofencinglocations.models.nearbyPlace;
 import com.example.geofencinglocations.models.place;
@@ -40,9 +37,6 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
 
-import org.json.JSONException;
-import org.json.JSONObject;
-
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.text.DateFormat;
@@ -51,7 +45,6 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
@@ -113,12 +106,6 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
                     LatLng current=currentLocationsList.get(size - 1);
 
                     // getNearByDetails(context,myLatlng,"AIzaSyDazjxsJFdohTwZllHdMsacB4P9luVjqyE");
-                    saveDataInDatabase(context,"GuzFS0EjtBSwuRXBuRfhFN8ZSfm1",
-                            "placeName",
-                            "myPlace.getPlaceAddress()",
-                            previous.latitude,previous.longitude,
-                            "placeType.toString()","pending","time"
-                    );
 
                     String prev_Address = getAddress(context, currentLocationsList.get(size - 2));
                     String current_Address = getAddress(context, currentLocationsList.get(size - 1));
@@ -152,11 +139,6 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
                     LatLng current=currentLocationsList2.get(size - 1);
 
                     // getNearByDetails(context,myLatlng,"AIzaSyDazjxsJFdohTwZllHdMsacB4P9luVjqyE");
-                    saveDataInDatabase(context,"GuzFS0EjtBSwuRXBuRfhFN8ZSfm1",
-                            "placeName",
-                            "myPlace.getPlaceAddress()",
-                            previous.latitude,previous.longitude,
-                            "placeType.toString()","pending","time");
 
                     String prev_Address = getAddress(context, currentLocationsList2.get(size - 2));
                     String current_Address = getAddress(context, currentLocationsList2.get(size - 1));
@@ -194,12 +176,6 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
                 LatLng previous=currentLocationsList.get(size - 2);
                 LatLng current=currentLocationsList.get(size - 1);
                 //getNearByDetails(context,myLatlng,"@string/google_maps_key");
-                saveDataInDatabase(context,"GuzFS0EjtBSwuRXBuRfhFN8ZSfm1",
-                        "placeName",
-                        "myPlace.getPlaceAddress()",
-                        previous.latitude,previous.longitude,
-                        "placeType.toString()","pending","time"
-                );
                 Toast.makeText(context, "Nearby Success...", Toast.LENGTH_SHORT).show();
                 getCurrentLocation(context);
 
@@ -359,7 +335,6 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
 
     public void getNearByDetails(Context context, LatLng latLng, String api_key) {
         String location = latLng.latitude + "," + latLng.longitude;
-        //myPlace = getGeocodingDetails(context, latLng.latitude, latLng.longitude);
         nearbyDetails = new ArrayList<>();
         final ApiInterface apiInterface = ApiClient.getClient().create(ApiInterface.class);
         Call<Example> call = apiInterface.getDetails(location, 100, api_key);
@@ -378,12 +353,6 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
                             List<String> placeType = response.body().getResults().get(i).getTypes();
                             nearbyPlace nearby = new nearbyPlace(placeName, lat, lng, placeType, "add");
                             nearbyDetails.add(nearby);
-                            saveDataInDatabase(context,"GuzFS0EjtBSwuRXBuRfhFN8ZSfm1",
-                                    placeName,
-                                    "myPlace.getPlaceAddress()",
-                                    lat,lng,
-                                    placeType.toString(),"pending",time
-                            );
                         }
                         Toast.makeText(context, "Data saved successfully", Toast.LENGTH_SHORT).show();
 
@@ -405,52 +374,6 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
         });
 
     }
-
-    private void saveDataInDatabase(Context context,String userId, String placeName, String placeAddress, Double lat, Double lng, String type, String status, String time) {
-        Toast.makeText(context, "Entered on Database", Toast.LENGTH_SHORT).show();
-        HashMap<String, String> params = new HashMap<>();
-        params.put("userId",userId);
-        params.put("placeLatitude",String.valueOf(lat));
-        params.put("placeLongitude",String.valueOf(lng));
-        params.put("placeAddress",placeAddress);
-        params.put("placeName",placeName);
-        params.put("placeType",type);
-        params.put("visitStatus",status);
-        params.put("placeTime",time);
-
-        PerformNetworkRequest request = new PerformNetworkRequest(Api.URL_CREATE_LIST, params, CODE_POST_REQUEST);
-        request.execute();
-        Toast.makeText(context, "Success Request", Toast.LENGTH_SHORT).show();
-    }
-
-    private place getGeocodingDetails(Context context, double Latitude, double Longitude) {
-        Geocoder geocoder;
-        place completeDetails = null;
-        List<Address> addresses = new ArrayList<>();
-        geocoder = new Geocoder(context, Locale.getDefault());
-
-        try {
-            addresses = geocoder.getFromLocation(Latitude, Longitude, 1);
-            String address = addresses.get(0).getAddressLine(0); // If any additional address line present than only, check with max available address lines by getMaxAddressLineIndex()
-            String city = addresses.get(0).getLocality();
-            String state = addresses.get(0).getAdminArea();
-            String country = addresses.get(0).getCountryName();
-            String postalCode = addresses.get(0).getPostalCode();
-            String knownName = addresses.get(0).getFeatureName();
-
-            SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
-            Date date = new Date();
-            String time = formatter.format(date).toString();
-
-            completeDetails = new place("GuzFS0EjtBSwuRXBuRfhFN8ZSfm1", Latitude, Longitude, address, "pending", time);
-            Log.d("LOCATION_DETAILS", completeDetails.toString());
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return completeDetails;
-    }
-
     public String getTimeOnTransaction(){
         Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("GMT+5:00"));
         Date currentLocalTime = cal.getTime();
@@ -460,59 +383,4 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
         return localTimeNow;
     }
 
-    private class PerformNetworkRequest extends AsyncTask<Void, Void, String> {
-
-        //the url where we need to send the request
-        String url;
-        //the parameters
-        HashMap<String, String> params;
-        //the request code to define whether it is a GET or POST
-        int requestCode;
-
-        //constructor to initialize values
-        PerformNetworkRequest(String url, HashMap<String, String> params, int requestCode) {
-            this.url = url;
-            this.params = params;
-            this.requestCode = requestCode;
-        }
-
-        //when the task started displaying a progressbar
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-        }
-
-
-        //this method will give the response from the request
-        @Override
-        protected void onPostExecute(String s) {
-            super.onPostExecute(s);
-            try {
-                JSONObject object = new JSONObject(s);
-                if (!object.getBoolean("error")) {
-                    //refreshing the herolist after every operation
-                    //so we get an updated list
-                    //we will create this method right now it is commented
-                    //because we haven't created it yet
-                    // refreshHistoryList(object.getJSONArray("lists"));
-                }
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-        }
-
-        //the network operation will be performed in background
-        @Override
-        protected String doInBackground(Void... voids) {
-            RequestHandler requestHandler = new RequestHandler();
-
-            if (requestCode == CODE_POST_REQUEST)
-                return requestHandler.sendPostRequest(url, params);
-
-            if (requestCode == CODE_GET_REQUEST)
-                return requestHandler.sendGetRequest(url);
-
-            return null;
-        }
-    }
 }
