@@ -119,12 +119,18 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
                 if (currentLocationsList.size() > 1)
                 {
                     int size = currentLocationsList.size();
+
+                    LatLng previous=currentLocationsList.get(size - 2);
+                    LatLng current=currentLocationsList.get(size - 1);
+
+
                     String prev_Address = getAddress(context, currentLocationsList.get(size - 2));
                     String current_Address = getAddress(context, currentLocationsList.get(size - 1));
 
                     Log.d("Previous Location", prev_Address);
                     Log.d("Break", "-------------------");
                     Log.d("Current Location", current_Address);
+
                 }
                 else {
 
