@@ -8,9 +8,12 @@ import androidx.core.content.ContextCompat;
 import android.Manifest;
 import android.app.PendingIntent;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Looper;
+import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -26,6 +29,11 @@ import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+
+import java.lang.reflect.Type;
+import java.util.ArrayList;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -66,6 +74,27 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    public void checkBackground(LatLng latLng){
+        if(Build.VERSION.SDK_INT>=29){
+            if (ContextCompat.checkSelfPermission(this,Manifest.permission.ACCESS_BACKGROUND_LOCATION)==
+                    PackageManager.PERMISSION_GRANTED){
+                addGeofence(latLng,100);
+            }
+            else{
+                if (ActivityCompat.shouldShowRequestPermissionRationale(this,Manifest.permission.ACCESS_BACKGROUND_LOCATION)){
+                    ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_BACKGROUND_LOCATION},10002);
+                }
+                else{
+                    ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_BACKGROUND_LOCATION},10002);
+                }
+            }
+        }
+
+        else{
+            addGeofence(latLng,100);
+        }
+    }
+
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         if (requestCode == 10001) {
@@ -81,14 +110,13 @@ public class MainActivity extends AppCompatActivity {
                 if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
                 }
                 Toast.makeText(this,"You can add geofences...",Toast.LENGTH_SHORT).show();
+                addGeofence(myLatlng,100);
             }
             else{
                 Toast.makeText(this,"Background location access is necessary for geofences to trigger...",Toast.LENGTH_SHORT).show();
             }
         }
-
     }
-
 
     private void addGeofence(LatLng latLng, float radius) {
         Geofence geofence = geofenceHelper.getGeofence(GEOFENCE_ID, latLng, radius, Geofence.GEOFENCE_TRANSITION_ENTER
@@ -136,12 +164,51 @@ public class MainActivity extends AppCompatActivity {
                             double current_lat = locationResult.getLocations().get(locationindex).getLatitude();
                             double current_long = locationResult.getLocations().get(locationindex).getLongitude();
                             myLatlng = new LatLng(current_lat, current_long);
-                            addGeofence(myLatlng,200);
+                            checkBackground(myLatlng);
+                            SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+
+                            if (!sharedPrefs.contains("locList"))
+                            {
+                                Log.d("Dont Exists", "creating");
+                                ArrayList<LatLng> latlongList = new ArrayList<>();
+                                latlongList.add(myLatlng);
+                                saveArrayList(getApplicationContext(), latlongList, "locList");
+                            }
+                            else
+                            {
+                                Log.d("Exists", "updating");
+                                ArrayList<LatLng> latlongList = getArrayList(getApplicationContext(), "locList");
+                                latlongList.add(myLatlng);
+                                saveArrayList(getApplicationContext(), latlongList, "locList");
+                            }
+
+                            Log.d("Location", String.valueOf(current_lat) + "," + String.valueOf(current_long));
+
+                            //addGeofence(myLatlng,100);
                             Log.d("Location", String.valueOf(current_lat) + "," + String.valueOf(current_long));
                         }
                     }
                 }, Looper.getMainLooper());
     }
+    public void saveArrayList(Context context, ArrayList<LatLng> list, String key) {
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+        SharedPreferences.Editor editor = prefs.edit();
+        Gson gson = new Gson();
+        String json = gson.toJson(list);
+        editor.putString(key, json);
+        editor.apply();
+
+    }
+
+    public ArrayList<LatLng> getArrayList(Context context, String key) {
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+        Gson gson = new Gson();
+        String json = prefs.getString(key, null);
+        Type type = new TypeToken<ArrayList<LatLng>>() {
+        }.getType();
+        return gson.fromJson(json, type);
+    }
+
 
     @Override
     protected void onResume() {
