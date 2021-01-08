@@ -150,7 +150,13 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
             getCurrentLocation(context);
 
         } else {
-            getNearByDetails(context,myLatlng,"@string/google_maps_key");
+            //getNearByDetails(context,myLatlng,"@string/google_maps_key");
+            saveDataInDatabase(context,"GuzFS0EjtBSwuRXBuRfhFN8ZSfm1",
+                    "placeName",
+                    "myPlace.getPlaceAddress()",
+                    myLatlng.latitude,myLatlng.longitude,
+                    "placeType.toString()","pending","time"
+            );
             Toast.makeText(context, "Nearby Success...", Toast.LENGTH_SHORT).show();
             getCurrentLocation(context);
         }
