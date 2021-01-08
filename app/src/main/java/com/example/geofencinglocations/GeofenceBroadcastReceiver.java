@@ -85,8 +85,8 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
         geofencingClient = LocationServices.getGeofencingClient(context);
         geofenceHelper = new GeofenceHelper(context);
         NotificationHelper notificationHelper = new NotificationHelper(context);
-        //myLatlng = new LatLng(24.436632, 67.636622);
-        myLatlng = new LatLng(0.0, 0.0);
+     //   myLatlng = new LatLng(24.436632, 67.636622);
+          myLatlng = new LatLng(0.0, 0.0);
 
         GeofencingEvent geofencingEvent = GeofencingEvent.fromIntent(intent);
         if (geofencingEvent.hasError()) {
@@ -104,7 +104,35 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
                 Toast.makeText(context, "Entered the selected zone", Toast.LENGTH_SHORT).show();
                 notificationHelper.sendHighPriorityNotification("Entry", "Entering on selected zone at " + StartTime, MainActivity.class);
                 StartTime = getTimeOnTransaction();
-                getNearByDetails(context,myLatlng,"AIzaSyDazjxsJFdohTwZllHdMsacB4P9luVjqyE");
+                ArrayList<LatLng> currentLocationsList = getArrayList(context, "locList");
+                if (currentLocationsList.size() != 0)
+                {
+                    int size = currentLocationsList.size();
+
+                    LatLng previous=currentLocationsList.get(size - 2);
+                    LatLng current=currentLocationsList.get(size - 1);
+
+                    // getNearByDetails(context,myLatlng,"AIzaSyDazjxsJFdohTwZllHdMsacB4P9luVjqyE");
+                    saveDataInDatabase(context,"GuzFS0EjtBSwuRXBuRfhFN8ZSfm1",
+                            "placeName",
+                            "myPlace.getPlaceAddress()",
+                            previous.latitude,previous.longitude,
+                            "placeType.toString()","pending","time"
+                    );
+
+                    String prev_Address = getAddress(context, currentLocationsList.get(size - 2));
+                    String current_Address = getAddress(context, currentLocationsList.get(size - 1));
+
+                    Log.d("Previous Location", prev_Address);
+                    Log.d("Break", "-------------------");
+                    Log.d("Current Location", current_Address);
+
+                }
+                else {
+
+                }
+
+
                 break;
 
             case Geofence.GEOFENCE_TRANSITION_DWELL:
@@ -114,18 +142,24 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
 
             case Geofence.GEOFENCE_TRANSITION_EXIT:
                 Toast.makeText(context, "Exit from the selected zone", Toast.LENGTH_SHORT).show();
-                ArrayList<LatLng> currentLocationsList = getArrayList(context, "locList");
-                Toast.makeText(context, "size " + Integer.toString(currentLocationsList.size()), Toast.LENGTH_SHORT).show();
-                if (currentLocationsList.size() > 1)
+                ArrayList<LatLng> currentLocationsList2 = getArrayList(context, "locList");
+                Toast.makeText(context, "size " + Integer.toString(currentLocationsList2.size()), Toast.LENGTH_SHORT).show();
+                if (currentLocationsList2.size() != 0)
                 {
-                    int size = currentLocationsList.size();
+                    int size = currentLocationsList2.size();
 
-                    LatLng previous=currentLocationsList.get(size - 2);
-                    LatLng current=currentLocationsList.get(size - 1);
+                    LatLng previous=currentLocationsList2.get(size - 2);
+                    LatLng current=currentLocationsList2.get(size - 1);
 
+                    // getNearByDetails(context,myLatlng,"AIzaSyDazjxsJFdohTwZllHdMsacB4P9luVjqyE");
+                    saveDataInDatabase(context,"GuzFS0EjtBSwuRXBuRfhFN8ZSfm1",
+                            "placeName",
+                            "myPlace.getPlaceAddress()",
+                            previous.latitude,previous.longitude,
+                            "placeType.toString()","pending","time");
 
-                    String prev_Address = getAddress(context, currentLocationsList.get(size - 2));
-                    String current_Address = getAddress(context, currentLocationsList.get(size - 1));
+                    String prev_Address = getAddress(context, currentLocationsList2.get(size - 2));
+                    String current_Address = getAddress(context, currentLocationsList2.get(size - 1));
 
                     Log.d("Previous Location", prev_Address);
                     Log.d("Break", "-------------------");
@@ -150,15 +184,39 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
             getCurrentLocation(context);
 
         } else {
-            //getNearByDetails(context,myLatlng,"@string/google_maps_key");
-            saveDataInDatabase(context,"GuzFS0EjtBSwuRXBuRfhFN8ZSfm1",
-                    "placeName",
-                    "myPlace.getPlaceAddress()",
-                    myLatlng.latitude,myLatlng.longitude,
-                    "placeType.toString()","pending","time"
-            );
-            Toast.makeText(context, "Nearby Success...", Toast.LENGTH_SHORT).show();
-            getCurrentLocation(context);
+
+            ArrayList<LatLng> currentLocationsList = getArrayList(context, "locList");
+            Toast.makeText(context, "size " + Integer.toString(currentLocationsList.size()), Toast.LENGTH_SHORT).show();
+            if (currentLocationsList.size() > 1)
+            {
+                int size = currentLocationsList.size();
+
+                LatLng previous=currentLocationsList.get(size - 2);
+                LatLng current=currentLocationsList.get(size - 1);
+                //getNearByDetails(context,myLatlng,"@string/google_maps_key");
+                saveDataInDatabase(context,"GuzFS0EjtBSwuRXBuRfhFN8ZSfm1",
+                        "placeName",
+                        "myPlace.getPlaceAddress()",
+                        previous.latitude,previous.longitude,
+                        "placeType.toString()","pending","time"
+                );
+                Toast.makeText(context, "Nearby Success...", Toast.LENGTH_SHORT).show();
+                getCurrentLocation(context);
+
+
+                String prev_Address = getAddress(context, currentLocationsList.get(size - 2));
+                String current_Address = getAddress(context, currentLocationsList.get(size - 1));
+
+                Log.d("Previous Location", prev_Address);
+                Log.d("Break", "-------------------");
+                Log.d("Current Location", current_Address);
+
+            }
+            else {
+
+            }
+
+
         }
     }
 
@@ -362,6 +420,7 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
 
         PerformNetworkRequest request = new PerformNetworkRequest(Api.URL_CREATE_LIST, params, CODE_POST_REQUEST);
         request.execute();
+        Toast.makeText(context, "Success Request", Toast.LENGTH_SHORT).show();
     }
 
     private place getGeocodingDetails(Context context, double Latitude, double Longitude) {
