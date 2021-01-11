@@ -351,7 +351,6 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
         geocoder = new Geocoder(context, Locale.getDefault());
 
         try {
-            Toast.makeText(context, "loc getting 2", Toast.LENGTH_SHORT).show();
             addresses = geocoder.getFromLocation(latLng.latitude, latLng.longitude, 1);
             address = addresses.get(0).getAddressLine(0); // If any additional address line present than only, check with max available address lines by getMaxAddressLineIndex()
             String city = addresses.get(0).getLocality();
@@ -363,7 +362,6 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
             SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
             Date date = new Date();
             String time = formatter.format(date).toString();
-            Toast.makeText(context, "Got loc 2", Toast.LENGTH_SHORT).show();
 
         } catch (IOException e) {
             e.printStackTrace();
