@@ -11,10 +11,9 @@ import retrofit2.http.Query;
 
 public interface PHPApiInterface {
 
-    @FormUrlEncoded
-    @POST("Api.php?apicall=createHistory")
+    @POST("create_history.php")
     Call<locResponse> saveLocation(
-            @Field("userId") String userId,
+            @Query("userId") String userId,
             @Query("placeLatitude") String placeLatitude,
             @Query("placeLongitude") String placeLongitude,
             @Query("placeAddress") String placeAddress,

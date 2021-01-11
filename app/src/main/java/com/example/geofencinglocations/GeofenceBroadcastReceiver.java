@@ -104,7 +104,6 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
                 if (currentLocationsList.size() != 0)
                 {
                     int size = currentLocationsList.size();
-
                     LatLng previous=currentLocationsList.get(size - 2);
                     LatLng current=currentLocationsList.get(size - 1);
 
@@ -137,6 +136,7 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
                             if(response.isSuccessful())
                             {
                                 Log.d("Retrofit",response.message());
+                                Toast.makeText(notificationHelper, "Record successfully saved", Toast.LENGTH_SHORT).show();
                             }
                             else
                             {
