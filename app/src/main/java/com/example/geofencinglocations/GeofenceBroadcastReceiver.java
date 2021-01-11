@@ -18,10 +18,13 @@ import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 
 import com.example.geofencinglocations.models.Example;
+import com.example.geofencinglocations.models.locResponse;
 import com.example.geofencinglocations.models.nearbyPlace;
 import com.example.geofencinglocations.models.place;
 import com.example.geofencinglocations.retrofit.ApiClient;
 import com.example.geofencinglocations.retrofit.ApiInterface;
+import com.example.geofencinglocations.retrofit.PHPApiClient;
+import com.example.geofencinglocations.retrofit.PHPApiInterface;
 import com.google.android.gms.location.Geofence;
 import com.google.android.gms.location.GeofencingClient;
 import com.google.android.gms.location.GeofencingEvent;
@@ -114,6 +117,40 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
                     Log.d("Break", "-------------------");
                     Log.d("Current Location", current_Address);
 
+
+                    final PHPApiInterface apiInterface = PHPApiClient.getClient().create(PHPApiInterface.class);
+
+                    Call<locResponse> locResponseCall= apiInterface.saveLocation(
+                            "Amin123",
+                            "3432.1224",
+                            "1203.3943",
+                            "Address",
+                            "Name",
+                            "Type",
+                            "not visited",
+                            "time"
+                    );
+
+                    locResponseCall.enqueue(new Callback<locResponse>() {
+                        @Override
+                        public void onResponse(Call<locResponse> call, Response<locResponse> response) {
+                            if(response.isSuccessful() && response.body()!=null)
+                            {
+                                Log.d("Retrofit",response.message());
+                            }
+                            else
+                            {
+                                Log.d("Retrofit err",response.toString());
+                            }
+                        }
+
+                        @Override
+                        public void onFailure(Call<locResponse> call, Throwable t) {
+                            Log.d("Retrofit err",t.getMessage());
+
+                        }
+                    });
+
                 }
                 else {
 
@@ -186,6 +223,7 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
                 Log.d("Previous Location", prev_Address);
                 Log.d("Break", "-------------------");
                 Log.d("Current Location", current_Address);
+
 
             }
             else {
