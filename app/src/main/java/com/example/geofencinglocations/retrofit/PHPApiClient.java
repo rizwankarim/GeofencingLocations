@@ -6,6 +6,7 @@ import retrofit2.converter.scalars.ScalarsConverterFactory;
 
 public class PHPApiClient {
     private static final String BASE_URL="https://hysabkytab.com/locationhistory/";
+    //https://hysabkytab.com/locationhistory/Api.php?apicall=createHistory
     private static Retrofit retrofit=null;
     public static Retrofit getClient()
     {

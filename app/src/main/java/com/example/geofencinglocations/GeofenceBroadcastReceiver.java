@@ -113,9 +113,9 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
                     String prev_Address = getAddress(context, currentLocationsList.get(size - 2));
                     String current_Address = getAddress(context, currentLocationsList.get(size - 1));
 
-                    Log.d("Previous Location", prev_Address);
+//                  Log.d("Previous Location", prev_Address);
                     Log.d("Break", "-------------------");
-                    Log.d("Current Location", current_Address);
+//                  Log.d("Current Location", current_Address);
 
 
                     final PHPApiInterface apiInterface = PHPApiClient.getClient().create(PHPApiInterface.class);
@@ -134,7 +134,7 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
                     locResponseCall.enqueue(new Callback<locResponse>() {
                         @Override
                         public void onResponse(Call<locResponse> call, Response<locResponse> response) {
-                            if(response.isSuccessful() && response.body()!=null)
+                            if(response.isSuccessful())
                             {
                                 Log.d("Retrofit",response.message());
                             }
@@ -146,7 +146,7 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
 
                         @Override
                         public void onFailure(Call<locResponse> call, Throwable t) {
-                            Log.d("Retrofit err",t.getMessage());
+                            Log.d("Retrofit Failed",t.getMessage());
 
                         }
                     });
